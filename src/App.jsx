@@ -11,7 +11,7 @@ import Register from './pages/Register'
 
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-neutral-50">
       <Navbar />
       <main>
         <Routes>
@@ -24,7 +24,16 @@ function App() {
           <Route path="/register" element={<Register />} />
         </Routes>
       </main>
-      <Toaster position="top-right" />
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          className: 'bg-white shadow-large border border-neutral-200',
+          style: {
+            borderRadius: '12px',
+            padding: '16px',
+          },
+        }}
+      />
     </div>
   )
 }
