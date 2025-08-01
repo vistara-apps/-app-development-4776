@@ -15,49 +15,52 @@ export default function Navbar() {
   const { isAuthenticated, user, logout } = useAuthStore()
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
-      <nav className="mx-auto max-w-7xl px-6 lg:px-8" aria-label="Top">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-soft border-b border-neutral-200/50">
+      <nav className="container-custom" aria-label="Top">
         <div className="flex w-full items-center justify-between py-4">
           <div className="flex items-center">
-            <Link to="/" className="text-2xl font-bold text-primary-600">
+            <Link to="/" className="text-2xl font-display font-bold text-gradient hover:scale-105 transition-transform duration-200">
               TryOn.ai
             </Link>
           </div>
           
-          <div className="hidden md:flex md:space-x-8">
+          <div className="hidden md:flex md:space-x-1">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                className="text-neutral-700 hover:text-primary-600 hover:bg-primary-50 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
               >
                 {item.name}
               </Link>
             ))}
           </div>
 
-          <div className="hidden md:flex md:items-center md:space-x-6">
+          <div className="hidden md:flex md:items-center md:space-x-4">
             {isAuthenticated ? (
               <>
                 <Link
                   to="/profile"
-                  className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
+                  className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors duration-200"
                 >
-                  {user?.name}
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-semibold">
+                    {user?.name?.charAt(0) || 'U'}
+                  </div>
+                  <span>{user?.name}</span>
                 </Link>
                 <button
                   onClick={logout}
-                  className="btn-secondary text-sm"
+                  className="btn-secondary btn-sm"
                 >
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="text-gray-700 hover:text-primary-600 text-sm font-medium">
+                <Link to="/login" className="text-neutral-700 hover:text-primary-600 text-sm font-medium px-4 py-2 rounded-xl hover:bg-neutral-50 transition-all duration-200">
                   Sign in
                 </Link>
-                <Link to="/register" className="btn-primary text-sm">
+                <Link to="/register" className="btn-primary btn-sm">
                   Sign up
                 </Link>
               </>
@@ -67,7 +70,7 @@ export default function Navbar() {
           <div className="flex md:hidden">
             <button
               type="button"
-              className="text-gray-700"
+              className="text-neutral-700 hover:text-primary-600 p-2 rounded-xl hover:bg-neutral-50 transition-all duration-200"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               {mobileMenuOpen ? (
@@ -81,55 +84,60 @@ export default function Navbar() {
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="space-y-1 pb-3 pt-2">
+          <div className="md:hidden animate-slide-down">
+            <div className="card mx-4 mb-4 p-4 space-y-2">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className="block px-3 py-2 text-gray-700 hover:text-primary-600"
+                  className="block px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-sm font-medium transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.name}
                 </Link>
               ))}
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    to="/profile"
-                    className="block px-3 py-2 text-gray-700 hover:text-primary-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      logout()
-                      setMobileMenuOpen(false)
-                    }}
-                    className="block px-3 py-2 text-gray-700 hover:text-primary-600 w-full text-left"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="block px-3 py-2 text-gray-700 hover:text-primary-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign in
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block px-3 py-2 text-gray-700 hover:text-primary-600"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
+              <div className="border-t border-neutral-200 pt-4 mt-4">
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      className="flex items-center space-x-3 px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-sm font-medium transition-all duration-200"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-semibold">
+                        {user?.name?.charAt(0) || 'U'}
+                      </div>
+                      <span>Profile</span>
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout()
+                        setMobileMenuOpen(false)
+                      }}
+                      className="w-full text-left px-4 py-3 text-neutral-700 hover:text-error-600 hover:bg-error-50 rounded-xl text-sm font-medium transition-all duration-200"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="block px-4 py-3 text-neutral-700 hover:text-primary-600 hover:bg-primary-50 rounded-xl text-sm font-medium transition-all duration-200"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign in
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="block px-4 py-3 text-center bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-xl text-sm font-medium shadow-soft hover:shadow-medium transition-all duration-200 mt-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Sign up
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}
