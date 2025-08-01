@@ -57,26 +57,62 @@ export default function VirtualTryOn() {
     setIsGenerating(true)
     
     try {
-      // Simulate API call to generate virtual try-on
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Import AI API function
+      const { generateVirtualTryOn: generateAI } = await import('../lib/aiApi')
       
-      // Mock result
-      setVirtualResult({
-        image: userPhoto, // In real implementation, this would be the generated image
-        confidence: 0.95,
-        feedback: {
-          fit: 'Great fit!',
-          style: 'This style suits you well',
-          recommendations: ['Try a smaller size for a more fitted look', 'This color complements your skin tone']
-        }
+      // Generate virtual try-on using AI
+      const result = await generateAI(userPhoto, selectedProduct, {
+        style: 'natural',
+        fit_preference: 'regular'
       })
       
-      setStep(4)
-      toast.success('Virtual try-on generated successfully!')
+      if (result.success) {
+        setVirtualResult({
+          image: result.data.image,
+          confidence: result.data.confidence,
+          feedback: result.data.feedback,
+          processingTime: result.data.processing_time,
+          modelUsed: result.data.model_used
+        })
+        
+        setStep(4)
+        toast.success('Virtual try-on generated successfully!')
+      } else {
+        // Use fallback data if AI generation fails
+        if (result.fallback) {
+          setVirtualResult({
+            image: result.fallback.image,
+            confidence: result.fallback.confidence,
+            feedback: result.fallback.feedback,
+            error: result.error
+          })
+          setStep(4)
+          toast.error(`AI generation failed: ${result.error}. Showing fallback result.`)
+        } else {
+          throw new Error(result.error)
+        }
+      }
       
     } catch (error) {
-      toast.error('Failed to generate virtual try-on')
-      console.error(error)
+      toast.error('Failed to generate virtual try-on. Please try again.')
+      console.error('Virtual try-on error:', error)
+      
+      // Show fallback result with original photo
+      setVirtualResult({
+        image: userPhoto,
+        confidence: 0,
+        feedback: {
+          fit: 'Unable to analyze fit',
+          style: 'Processing failed',
+          recommendations: [
+            'Please try again later',
+            'Check your internet connection',
+            'Contact support if the issue persists'
+          ]
+        },
+        error: error.message
+      })
+      setStep(4)
     } finally {
       setIsGenerating(false)
     }
