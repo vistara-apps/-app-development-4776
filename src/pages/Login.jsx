@@ -1,39 +1,23 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 
 export default function Login() {
-  const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const navigate = useNavigate()
+  const { login, isLoading } = useAuthStore()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data) => {
-    setIsLoading(true)
+    const result = await login(data.email, data.password)
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock successful login
-      login({
-        id: 1,
-        name: 'Demo User',
-        email: data.email,
-        subscription: { plan: 'basic', active: true }
-      })
-      
-      toast.success('Welcome back!')
-      window.location.href = '/'
-      
-    } catch (error) {
-      toast.error('Invalid email or password')
-    } finally {
-      setIsLoading(false)
+    if (result?.success) {
+      navigate('/')
     }
+    // Error handling is done in the store
   }
 
   return (

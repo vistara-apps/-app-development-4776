@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
@@ -8,8 +9,30 @@ import Profile from './pages/Profile'
 import Pricing from './pages/Pricing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import useAuthStore from './store/authStore'
 
 function App() {
+  const { initialize, isLoading } = useAuthStore()
+
+  useEffect(() => {
+    // Initialize auth state on app start
+    initialize()
+  }, [initialize])
+
+  // Show loading spinner while initializing auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4">
+            <div className="loading-spinner w-16 h-16 border-4"></div>
+          </div>
+          <p className="text-neutral-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <Navbar />
