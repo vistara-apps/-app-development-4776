@@ -6,6 +6,7 @@ import useTryOnStore from '../store/tryOnStore'
 import useAuthStore from '../store/authStore'
 import ProductSelector from '../components/ProductSelector'
 import VirtualResult from '../components/VirtualResult'
+import { AIService } from '../services/ai'
 
 export default function VirtualTryOn() {
   const [step, setStep] = useState(1)
@@ -19,7 +20,7 @@ export default function VirtualTryOn() {
     setVirtualResult,
     setIsGenerating 
   } = useTryOnStore()
-  const { isAuthenticated, subscription } = useAuthStore()
+  const { isAuthenticated, hasActiveSubscription } = useAuthStore()
 
   const handlePhotoUpload = (event) => {
     const file = event.target.files[0]
@@ -49,7 +50,7 @@ export default function VirtualTryOn() {
       return
     }
 
-    if (!subscription) {
+    if (!hasActiveSubscription()) {
       toast.error('Please upgrade to a paid plan to use virtual try-on')
       return
     }
@@ -57,26 +58,34 @@ export default function VirtualTryOn() {
     setIsGenerating(true)
     
     try {
-      // Simulate API call to generate virtual try-on
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Show AI configuration status
+      const aiStatus = AIService.getStatus()
+      if (aiStatus.fallbackMode) {
+        toast('Using demo mode - configure OpenAI API key for full AI analysis', {
+          icon: '⚠️',
+          duration: 4000
+        })
+      }
+
+      // Generate virtual try-on using AI service
+      const result = await AIService.generateVirtualTryOn(
+        userPhoto,
+        selectedProduct.image,
+        selectedProduct.name
+      )
       
-      // Mock result
-      setVirtualResult({
-        image: userPhoto, // In real implementation, this would be the generated image
-        confidence: 0.95,
-        feedback: {
-          fit: 'Great fit!',
-          style: 'This style suits you well',
-          recommendations: ['Try a smaller size for a more fitted look', 'This color complements your skin tone']
-        }
-      })
-      
+      setVirtualResult(result)
       setStep(4)
-      toast.success('Virtual try-on generated successfully!')
+      
+      if (result.isMock) {
+        toast.success('Virtual try-on generated! (Demo mode)')
+      } else {
+        toast.success('AI-powered virtual try-on generated successfully!')
+      }
       
     } catch (error) {
-      toast.error('Failed to generate virtual try-on')
-      console.error(error)
+      toast.error('Failed to generate virtual try-on. Please try again.')
+      console.error('Virtual try-on error:', error)
     } finally {
       setIsGenerating(false)
     }

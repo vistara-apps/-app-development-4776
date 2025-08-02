@@ -49,7 +49,12 @@ export default function Navbar() {
                   <span>{user?.name}</span>
                 </Link>
                 <button
-                  onClick={logout}
+                  onClick={async () => {
+                    const result = await logout()
+                    if (result.success) {
+                      window.location.href = '/'
+                    }
+                  }}
                   className="btn-secondary btn-sm"
                 >
                   Logout
@@ -110,9 +115,12 @@ export default function Navbar() {
                       <span>Profile</span>
                     </Link>
                     <button
-                      onClick={() => {
-                        logout()
-                        setMobileMenuOpen(false)
+                      onClick={async () => {
+                        const result = await logout()
+                        if (result.success) {
+                          setMobileMenuOpen(false)
+                          window.location.href = '/'
+                        }
                       }}
                       className="w-full text-left px-4 py-3 text-neutral-700 hover:text-error-600 hover:bg-error-50 rounded-xl text-sm font-medium transition-all duration-200"
                     >

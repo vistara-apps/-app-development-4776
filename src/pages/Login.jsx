@@ -15,22 +15,16 @@ export default function Login() {
     setIsLoading(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const result = await login(data.email, data.password)
       
-      // Mock successful login
-      login({
-        id: 1,
-        name: 'Demo User',
-        email: data.email,
-        subscription: { plan: 'basic', active: true }
-      })
-      
-      toast.success('Welcome back!')
-      window.location.href = '/'
-      
+      if (result.success) {
+        toast.success('Welcome back!')
+        window.location.href = '/'
+      } else {
+        toast.error(result.error || 'Invalid email or password')
+      }
     } catch (error) {
-      toast.error('Invalid email or password')
+      toast.error('An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }

@@ -7,7 +7,7 @@ import useAuthStore from '../store/authStore'
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { register: registerUser } = useAuthStore()
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
@@ -16,22 +16,18 @@ export default function Register() {
     setIsLoading(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Mock successful registration
-      login({
-        id: 1,
-        name: data.name,
-        email: data.email,
-        subscription: { plan: 'free', active: true }
+      const result = await registerUser(data.email, data.password, {
+        name: data.name
       })
       
-      toast.success('Account created successfully!')
-      window.location.href = '/profile'
-      
+      if (result.success) {
+        toast.success('Account created successfully! Please check your email to verify your account.')
+        window.location.href = '/login'
+      } else {
+        toast.error(result.error || 'Failed to create account. Please try again.')
+      }
     } catch (error) {
-      toast.error('Failed to create account. Please try again.')
+      toast.error('An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }
