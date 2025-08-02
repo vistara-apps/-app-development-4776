@@ -1,38 +1,31 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
-import { toast } from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
+import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Login() {
-  const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const navigate = useNavigate()
+  const { signIn, loading } = useAuthStore()
+  const [showResetPassword, setShowResetPassword] = useState(false)
   
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data) => {
-    setIsLoading(true)
+    const result = await signIn(data.email, data.password)
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock successful login
-      login({
-        id: 1,
-        name: 'Demo User',
-        email: data.email,
-        subscription: { plan: 'basic', active: true }
-      })
-      
-      toast.success('Welcome back!')
-      window.location.href = '/'
-      
-    } catch (error) {
-      toast.error('Invalid email or password')
-    } finally {
-      setIsLoading(false)
+    if (result.success) {
+      navigate('/')
+    }
+  }
+
+  const handleResetPassword = async (data) => {
+    const { resetPassword } = useAuthStore.getState()
+    const result = await resetPassword(data.email)
+    
+    if (result.success) {
+      setShowResetPassword(false)
     }
   }
 
@@ -116,19 +109,30 @@ export default function Login() {
             </div>
 
             <div className="text-sm">
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
+              <button
+                type="button"
+                onClick={() => setShowResetPassword(true)}
+                className="font-medium text-primary-600 hover:text-primary-500"
+              >
                 Forgot your password?
-              </a>
+              </button>
             </div>
           </div>
 
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {loading ? (
+                <div className="flex items-center">
+                  <LoadingSpinner size="small" className="mr-2" />
+                  Signing in...
+                </div>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </div>
 
@@ -158,6 +162,64 @@ export default function Login() {
             </div>
           </div>
         </form>
+
+        {/* Reset Password Modal */}
+        {showResetPassword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+            onClick={() => setShowResetPassword(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-white rounded-lg p-6 w-full max-w-md"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Reset Password</h3>
+              <form onSubmit={handleSubmit(handleResetPassword)}>
+                <div className="mb-4">
+                  <label htmlFor="reset-email" className="block text-sm font-medium text-gray-700 mb-2">
+                    Email address
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    {...register('email', { 
+                      required: 'Email is required',
+                      pattern: {
+                        value: /^\S+@\S+$/i,
+                        message: 'Invalid email address'
+                      }
+                    })}
+                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    placeholder="Enter your email address"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(false)}
+                    className="flex-1 py-2 px-4 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="flex-1 py-2 px-4 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
+                  >
+                    {loading ? 'Sending...' : 'Send Reset Link'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     </div>
   )
