@@ -4,12 +4,14 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
+import useAuthStore from '../store/authStore'
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const { signIn } = useAuthStore()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
 

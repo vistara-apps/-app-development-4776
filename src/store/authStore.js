@@ -48,43 +48,14 @@ const useAuthStore = create((set, get) => ({
         user,
         profile: null,
         isAuthenticated: true,
-        subscription: null
+        subscription: { plan: 'basic', active: true } // Mock subscription fallback
       })
     }
   },
   
-  // Login with email and password
-  login: async (email, password) => {
+  // Sign up with email and password
+  signUp: async (email, password, userData = {}) => {
     set({ isLoading: true })
-    
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-      
-      if (error) {
-        throw error
-      }
-      
-      if (data.user) {
-        await get().setUserFromSession(data.user)
-        toast.success('Welcome back!')
-        return { success: true }
-      }
-    } catch (error) {
-      console.error('Login error:', error)
-      toast.error(error.message || 'Failed to sign in')
-      return { success: false, error: error.message }
-    } finally {
-      set({ isLoading: false })
-    }
-  },
-  
-  // Register new user
-  register: async (email, password, userData = {}) => {
-    set({ isLoading: true })
-    
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -94,31 +65,52 @@ const useAuthStore = create((set, get) => ({
         }
       })
       
-      if (error) {
-        throw error
-      }
+      if (error) throw error
       
       if (data.user) {
-        toast.success('Registration successful! Please check your email to verify your account.')
-        return { success: true }
+        toast.success('Account created! Please check your email to verify your account.')
+        return { success: true, data }
       }
     } catch (error) {
-      console.error('Registration error:', error)
+      console.error('Sign up error:', error)
       toast.error(error.message || 'Failed to create account')
-      return { success: false, error: error.message }
+      return { success: false, error }
     } finally {
       set({ isLoading: false })
     }
   },
   
-  // Logout
-  logout: async () => {
+  // Sign in with email and password
+  signIn: async (email, password) => {
+    set({ isLoading: true })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+      
+      if (error) throw error
+      
+      if (data.user) {
+        await get().setUserFromSession(data.user)
+        toast.success('Welcome back!')
+        return { success: true, data }
+      }
+    } catch (error) {
+      console.error('Sign in error:', error)
+      toast.error(error.message || 'Failed to sign in')
+      return { success: false, error }
+    } finally {
+      set({ isLoading: false })
+    }
+  },
+  
+  // Sign out
+  signOut: async () => {
+    set({ isLoading: true })
     try {
       const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        throw error
-      }
+      if (error) throw error
       
       set({ 
         user: null,
@@ -127,12 +119,30 @@ const useAuthStore = create((set, get) => ({
         subscription: null,
         bodyMeasurements: null 
       })
-      
       toast.success('Signed out successfully')
+      return { success: true }
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error('Sign out error:', error)
       toast.error('Failed to sign out')
+      return { success: false, error }
+    } finally {
+      set({ isLoading: false })
     }
+  },
+  
+  // Legacy login method for backward compatibility
+  login: async (email, password) => {
+    return await get().signIn(email, password)
+  },
+  
+  // Legacy logout method for backward compatibility
+  logout: async () => {
+    return await get().signOut()
+  },
+  
+  // Register method for backward compatibility
+  register: async (email, password, userData = {}) => {
+    return await get().signUp(email, password, userData)
   },
   
   // Update user profile
@@ -182,7 +192,28 @@ const useAuthStore = create((set, get) => ({
   },
   
   // Set subscription
-  setSubscription: (subscription) => set({ subscription })
+  setSubscription: (subscription) => set({ subscription }),
+  
+  // Reset password
+  resetPassword: async (email) => {
+    set({ isLoading: true })
+    try {
+      const { data, error } = await supabase.auth.resetPassword({
+        email,
+        redirectTo: `${window.location.origin}/reset-password`
+      })
+      if (error) throw error
+      
+      toast.success('Password reset email sent!')
+      return { success: true, data }
+    } catch (error) {
+      console.error('Reset password error:', error)
+      toast.error(error.message || 'Failed to send reset email')
+      return { success: false, error }
+    } finally {
+      set({ isLoading: false })
+    }
+  }
 }))
 
 // Set up auth state change listener
@@ -192,10 +223,11 @@ supabase.auth.onAuthStateChange(async (event, session) => {
   if (event === 'SIGNED_IN' && session?.user) {
     await store.setUserFromSession(session.user)
   } else if (event === 'SIGNED_OUT') {
-    store.logout()
+    await store.signOut()
   } else if (event === 'TOKEN_REFRESHED' && session?.user) {
     await store.setUserFromSession(session.user)
   }
 })
 
 export default useAuthStore
+

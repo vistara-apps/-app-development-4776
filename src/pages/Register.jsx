@@ -4,11 +4,13 @@ import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
+import useAuthStore from '../store/authStore'
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
   const { register: registerUser } = useAuth()
   const navigate = useNavigate()
+  const { signUp } = useAuthStore()
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
