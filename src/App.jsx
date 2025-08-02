@@ -13,8 +13,6 @@ import Pricing from './pages/Pricing'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import Wardrobe from './pages/Wardrobe'
-import ProtectedRoute from './components/ProtectedRoute'
-import LoadingSpinner from './components/LoadingSpinner'
 import useAuthStore from './store/authStore'
 
 function App() {

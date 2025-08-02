@@ -2,43 +2,53 @@ import { create } from 'zustand'
 import { supabase, authHelpers, getCurrentUser, getUserProfile, getSubscriptionStatus, updateUserProfile } from '../lib/supabase'
 import { toast } from 'react-hot-toast'
 
-// Import services with fallback for backward compatibility
+// Service loaders - initialize on first use
 let userService, subscriptionService
-try {
-  const userServiceModule = await import('../services/userService')
-  userService = userServiceModule.userService
-} catch {
-  // Use legacy functions if services don't exist
-  userService = {
-    getProfile: getUserProfile,
-    updateProfile: async (userId, updates) => {
-      return { data: await updateUserProfile(userId, updates) }
-    },
-    createProfile: async (userId, profileData) => {
-      return { data: await updateUserProfile(userId, profileData) }
-    },
-    setBodyMeasurements: async (userId, measurements) => {
-      return { data: await updateUserProfile(userId, { body_measurements: measurements }) }
-    }
-  }
-}
+let servicesLoaded = false
 
-try {
-  const subscriptionServiceModule = await import('../services/subscriptionService')
-  subscriptionService = subscriptionServiceModule.subscriptionService
-} catch {
-  // Use legacy functions if services don't exist
-  subscriptionService = {
-    getSubscription: getSubscriptionStatus,
-    getSubscriptionFeatures: (plan) => {
-      const features = {
-        free: { try_on_limit: 3, wardrobe_items: 10 },
-        basic: { try_on_limit: 50, wardrobe_items: 100 },
-        premium: { try_on_limit: -1, wardrobe_items: -1 }
+const loadServices = async () => {
+  if (servicesLoaded) return
+
+  // Try to load user service
+  try {
+    const userServiceModule = await import('../services/userService')
+    userService = userServiceModule.userService
+  } catch {
+    // Use legacy functions if services don't exist
+    userService = {
+      getProfile: getUserProfile,
+      updateProfile: async (userId, updates) => {
+        return { data: await updateUserProfile(userId, updates) }
+      },
+      createProfile: async (userId, profileData) => {
+        return { data: await updateUserProfile(userId, profileData) }
+      },
+      setBodyMeasurements: async (userId, measurements) => {
+        return { data: await updateUserProfile(userId, { body_measurements: measurements }) }
       }
-      return features[plan] || features.free
     }
   }
+
+  // Try to load subscription service
+  try {
+    const subscriptionServiceModule = await import('../services/subscriptionService')
+    subscriptionService = subscriptionServiceModule.subscriptionService
+  } catch {
+    // Use legacy functions if services don't exist
+    subscriptionService = {
+      getSubscription: getSubscriptionStatus,
+      getSubscriptionFeatures: (plan) => {
+        const features = {
+          free: { try_on_limit: 3, wardrobe_items: 10 },
+          basic: { try_on_limit: 50, wardrobe_items: 100 },
+          premium: { try_on_limit: -1, wardrobe_items: -1 }
+        }
+        return features[plan] || features.free
+      }
+    }
+  }
+
+  servicesLoaded = true
 }
 
 const useAuthStore = create((set, get) => ({
@@ -54,6 +64,9 @@ const useAuthStore = create((set, get) => ({
   initialize: async () => {
     try {
       set({ isLoading: true })
+      
+      // Load services first
+      await loadServices()
       
       const { session, error } = await authHelpers.getSession()
       
@@ -80,6 +93,9 @@ const useAuthStore = create((set, get) => ({
       set({ user, isAuthenticated: !!user, isLoading: true })
       
       if (user) {
+        // Ensure services are loaded
+        await loadServices()
+        
         // Load user profile
         const profile = await userService.getProfile(user.id)
         const profileData = profile?.data || profile
@@ -117,6 +133,9 @@ const useAuthStore = create((set, get) => ({
   signUp: async (email, password, userData = {}) => {
     try {
       set({ isLoading: true })
+      
+      // Ensure services are loaded
+      await loadServices()
       
       const { data, error } = await authHelpers.signUp(email, password, userData)
       
@@ -238,6 +257,9 @@ const useAuthStore = create((set, get) => ({
 
       set({ isLoading: true })
       
+      // Ensure services are loaded
+      await loadServices()
+      
       const { data, error } = await userService.updateProfile(user.id, updates)
       
       if (error) {
@@ -268,6 +290,9 @@ const useAuthStore = create((set, get) => ({
     try {
       const { user } = get()
       if (!user) return { success: false, error: 'Not authenticated' }
+
+      // Ensure services are loaded
+      await loadServices()
 
       const { data, error } = await userService.setBodyMeasurements(user.id, measurements)
       
@@ -309,7 +334,19 @@ const useAuthStore = create((set, get) => ({
   getSubscriptionFeatures: () => {
     const { subscription } = get()
     const plan = subscription?.plan || 'free'
-    return subscriptionService.getSubscriptionFeatures(plan)
+    
+    // Ensure services are loaded, but don't await
+    if (servicesLoaded && subscriptionService) {
+      return subscriptionService.getSubscriptionFeatures(plan)
+    }
+    
+    // Fallback features
+    const features = {
+      free: { try_on_limit: 3, wardrobe_items: 10 },
+      basic: { try_on_limit: 50, wardrobe_items: 100 },
+      premium: { try_on_limit: -1, wardrobe_items: -1 }
+    }
+    return features[plan] || features.free
   }
 }))
 

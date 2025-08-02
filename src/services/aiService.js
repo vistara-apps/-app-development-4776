@@ -225,6 +225,12 @@ const generateStyleRecommendations = async (userPreferences, wardrobeItems = [])
   }
 }
 
+// Image utilities object
+export const imageUtils = {
+  compressImage,
+  imageToBase64
+}
+
 // AI Service object
 export const aiService = {
   generateVirtualTryOn,
