@@ -49,7 +49,9 @@ export default function VirtualTryOn() {
       return
     }
 
-    if (!subscription) {
+    // Check subscription with new auth store method
+    const hasSubscription = useAuthStore.getState().hasActiveSubscription()
+    if (!hasSubscription) {
       toast.error('Please upgrade to a paid plan to use virtual try-on')
       return
     }
@@ -57,26 +59,54 @@ export default function VirtualTryOn() {
     setIsGenerating(true)
     
     try {
-      // Simulate API call to generate virtual try-on
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Import AI service dynamically to avoid issues if API key is missing
+      const { aiService } = await import('../services/aiService')
       
-      // Mock result
-      setVirtualResult({
-        image: userPhoto, // In real implementation, this would be the generated image
-        confidence: 0.95,
-        feedback: {
-          fit: 'Great fit!',
-          style: 'This style suits you well',
-          recommendations: ['Try a smaller size for a more fitted look', 'This color complements your skin tone']
-        }
-      })
+      // Generate virtual try-on using AI
+      const result = await aiService.generateVirtualTryOn(
+        userPhoto,
+        selectedProduct.image,
+        selectedProduct
+      )
       
-      setStep(4)
-      toast.success('Virtual try-on generated successfully!')
+      if (result.success) {
+        setVirtualResult(result.data)
+        setStep(4)
+        toast.success('Virtual try-on generated successfully!')
+      } else {
+        // Fallback to mock data if AI service fails
+        setVirtualResult({
+          image: userPhoto,
+          confidence: 0.7,
+          feedback: {
+            fit: 'Analysis unavailable - using basic assessment',
+            style: 'Style analysis temporarily unavailable',
+            color: 'Color analysis temporarily unavailable',
+            recommendations: ['AI analysis is temporarily unavailable. Please try again later for detailed feedback.']
+          },
+          overall_rating: 3.0
+        })
+        setStep(4)
+        toast.warning('AI analysis unavailable, showing basic preview')
+      }
       
     } catch (error) {
-      toast.error('Failed to generate virtual try-on')
-      console.error(error)
+      console.error('Virtual try-on error:', error)
+      
+      // Fallback to mock data
+      setVirtualResult({
+        image: userPhoto,
+        confidence: 0.7,
+        feedback: {
+          fit: 'Unable to analyze fit - please try again',
+          style: 'Style analysis unavailable',
+          color: 'Color analysis unavailable',
+          recommendations: ['Please try again later for detailed analysis']
+        },
+        overall_rating: 3.0
+      })
+      setStep(4)
+      toast.error('AI service temporarily unavailable')
     } finally {
       setIsGenerating(false)
     }

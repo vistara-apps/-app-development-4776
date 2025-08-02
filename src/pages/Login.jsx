@@ -1,39 +1,36 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
-import { toast } from 'react-hot-toast'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { signIn, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      const from = location.state?.from?.pathname || '/'
+      navigate(from, { replace: true })
+    }
+  }, [isAuthenticated, navigate, location])
 
   const onSubmit = async (data) => {
     setIsLoading(true)
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock successful login
-      login({
-        id: 1,
-        name: 'Demo User',
-        email: data.email,
-        subscription: { plan: 'basic', active: true }
-      })
-      
-      toast.success('Welcome back!')
-      window.location.href = '/'
-      
-    } catch (error) {
-      toast.error('Invalid email or password')
-    } finally {
-      setIsLoading(false)
+    const result = await signIn(data.email, data.password)
+    
+    if (result.success) {
+      const from = location.state?.from?.pathname || '/'
+      navigate(from, { replace: true })
     }
+    
+    setIsLoading(false)
   }
 
   return (
@@ -126,9 +123,16 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Signing in...
+                </div>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </div>
 
