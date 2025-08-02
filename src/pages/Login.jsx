@@ -7,17 +7,17 @@ import useAuthStore from '../store/authStore'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, isLoading } = useAuthStore()
+  const { signIn, isLoading } = useAuthStore()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   const onSubmit = async (data) => {
-    const result = await login(data.email, data.password)
+    const result = await signIn(data.email, data.password)
     
     if (result?.success) {
       navigate('/')
     }
-    // Error handling is done in the store
+    // Error handling is done in the store with toast notifications
   }
 
   return (

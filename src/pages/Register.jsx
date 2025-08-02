@@ -7,20 +7,21 @@ import useAuthStore from '../store/authStore'
 
 export default function Register() {
   const navigate = useNavigate()
-  const { register: registerUser, isLoading } = useAuthStore()
+  const { signUp, isLoading } = useAuthStore()
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
 
   const onSubmit = async (data) => {
-    const result = await registerUser(data.email, data.password, {
-      name: data.name
+    const result = await signUp(data.email, data.password, {
+      full_name: data.name
     })
     
     if (result?.success) {
+      // User will need to verify email before they can sign in
       navigate('/login')
     }
-    // Error handling is done in the store
+    // Error handling is done in the store with toast notifications
   }
 
   return (

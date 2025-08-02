@@ -1,7 +1,19 @@
 import { motion } from 'framer-motion'
-import { StarIcon } from '@heroicons/react/24/solid'
+import { StarIcon, ShareIcon } from '@heroicons/react/24/solid'
+import useSocialShare from '../hooks/useSocialShare'
+import SocialShareModal from './SocialShareModal'
+import useTryOnStore from '../store/tryOnStore'
 
 export default function VirtualResult({ result }) {
+  const { selectedProduct } = useTryOnStore()
+  const {
+    isSharing,
+    shareModalOpen,
+    shareTo,
+    openShareModal,
+    closeShareModal,
+    isWebShareSupported
+  } = useSocialShare()
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -60,12 +72,28 @@ export default function VirtualResult({ result }) {
             <button className="btn-secondary w-full">
               Try Another Product
             </button>
-            <button className="btn-secondary w-full">
-              Share Result
+            <button 
+              onClick={openShareModal}
+              disabled={isSharing}
+              className="btn-secondary w-full flex items-center justify-center group disabled:opacity-50"
+            >
+              <ShareIcon className="h-4 w-4 mr-2 transition-transform group-hover:scale-110" />
+              {isSharing ? 'Sharing...' : 'Share Result'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Social Share Modal */}
+      <SocialShareModal
+        isOpen={shareModalOpen}
+        onClose={closeShareModal}
+        onShare={shareTo}
+        isSharing={isSharing}
+        result={result}
+        product={selectedProduct}
+        isWebShareSupported={isWebShareSupported}
+      />
     </motion.div>
   )
 }

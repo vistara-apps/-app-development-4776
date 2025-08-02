@@ -6,6 +6,7 @@ import useTryOnStore from '../store/tryOnStore'
 import useAuthStore from '../store/authStore'
 import ProductSelector from '../components/ProductSelector'
 import VirtualResult from '../components/VirtualResult'
+import { generateVirtualTryOn } from '../utils/aiApi'
 
 export default function VirtualTryOn() {
   const [step, setStep] = useState(1)
@@ -38,7 +39,7 @@ export default function VirtualTryOn() {
     }
   }
 
-  const generateVirtualTryOn = async () => {
+  const generateVirtualTryOnResult = async () => {
     if (!selectedProduct || !userPhoto) {
       toast.error('Please select a product and upload a photo')
       return
@@ -57,45 +58,28 @@ export default function VirtualTryOn() {
     setIsGenerating(true)
     
     try {
-      // Import AI API function
-      const { generateVirtualTryOn: generateAI } = await import('../lib/aiApi')
-      
-      // Generate virtual try-on using AI
-      const result = await generateAI(userPhoto, selectedProduct, {
-        style: 'natural',
-        fit_preference: 'regular'
+      // Use AI API to generate virtual try-on
+      const result = await generateVirtualTryOn(userPhoto, selectedProduct.image, {
+        product_type: selectedProduct.category,
+        style_preferences: selectedProduct.style
       })
       
       if (result.success) {
-        setVirtualResult({
-          image: result.data.image,
-          confidence: result.data.confidence,
-          feedback: result.data.feedback,
-          processingTime: result.data.processing_time,
-          modelUsed: result.data.model_used
-        })
-        
+        setVirtualResult(result.data)
         setStep(4)
-        toast.success('Virtual try-on generated successfully!')
-      } else {
-        // Use fallback data if AI generation fails
-        if (result.fallback) {
-          setVirtualResult({
-            image: result.fallback.image,
-            confidence: result.fallback.confidence,
-            feedback: result.fallback.feedback,
-            error: result.error
-          })
-          setStep(4)
-          toast.error(`AI generation failed: ${result.error}. Showing fallback result.`)
+        
+        if (result.data.isMock) {
+          toast.success('Virtual try-on generated! (Demo mode)')
         } else {
-          throw new Error(result.error)
+          toast.success('Virtual try-on generated successfully!')
         }
+      } else {
+        throw new Error(result.error || 'Failed to generate virtual try-on')
       }
       
     } catch (error) {
-      toast.error('Failed to generate virtual try-on. Please try again.')
-      console.error('Virtual try-on error:', error)
+      toast.error(error.message || 'Failed to generate virtual try-on')
+      console.error('Virtual try-on generation error:', error)
       
       // Show fallback result with original photo
       setVirtualResult({
@@ -110,7 +94,8 @@ export default function VirtualTryOn() {
             'Contact support if the issue persists'
           ]
         },
-        error: error.message
+        error: error.message,
+        isMock: true
       })
       setStep(4)
     } finally {
@@ -351,7 +336,7 @@ export default function VirtualTryOn() {
                   </div>
                 ) : (
                   <button
-                    onClick={generateVirtualTryOn}
+                    onClick={generateVirtualTryOnResult}
                     disabled={!selectedProduct || !userPhoto}
                     className="btn-primary btn-xl disabled:opacity-50 disabled:cursor-not-allowed group"
                   >
