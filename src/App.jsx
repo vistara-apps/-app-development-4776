@@ -8,6 +8,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import VirtualTryOn from './pages/VirtualTryOn'
 import Recommendations from './pages/Recommendations'
+import OutfitRecommendations from './pages/OutfitRecommendations'
 import Profile from './pages/Profile'
 import Pricing from './pages/Pricing'
 import Login from './pages/Login'
@@ -55,6 +56,11 @@ function App() {
             <Route path="/recommendations" element={
               <ProtectedRoute>
                 <Recommendations />
+              </ProtectedRoute>
+            } />
+            <Route path="/outfits" element={
+              <ProtectedRoute>
+                <OutfitRecommendations />
               </ProtectedRoute>
             } />
             <Route path="/profile" element={

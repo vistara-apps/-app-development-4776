@@ -13,6 +13,7 @@ const authenticatedNavigation = [
   { name: 'Virtual Try-On', href: '/try-on' },
   { name: 'Wardrobe', href: '/wardrobe' },
   { name: 'Recommendations', href: '/recommendations' },
+  { name: 'AI Outfits', href: '/outfits' },
   { name: 'Pricing', href: '/pricing' }
 ]
 

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  HeartIcon, 
-  ShoppingCartIcon, 
   SparklesIcon,
   UserGroupIcon,
   CalendarIcon,
-  SunIcon,
   CloudIcon,
-  AdjustmentsHorizontalIcon
+  AdjustmentsHorizontalIcon,
+  HeartIcon,
+  ShoppingCartIcon,
+  StarIcon
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid'
 import { toast } from 'react-hot-toast'
@@ -16,18 +16,21 @@ import useAuthStore from '../store/authStore'
 import LoadingSpinner from '../components/LoadingSpinner'
 import { outfitRecommendationService, OCCASIONS, STYLE_PREFERENCES, WEATHER_CONDITIONS } from '../services/outfitRecommendationService'
 
-export default function Recommendations() {
+export default function OutfitRecommendations() {
   const [favorites, setFavorites] = useState(new Set())
   const [outfits, setOutfits] = useState([])
   const [influencers, setInfluencers] = useState([])
   const [loading, setLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState('outfits') // 'outfits', 'influencers'
+  const [activeTab, setActiveTab] = useState('outfits')
   
   // Recommendation filters
   const [selectedOccasion, setSelectedOccasion] = useState(OCCASIONS.CASUAL)
   const [selectedWeather, setSelectedWeather] = useState(WEATHER_CONDITIONS.WARM)
   const [selectedStyle, setSelectedStyle] = useState(STYLE_PREFERENCES.CLASSIC)
   const [showFilters, setShowFilters] = useState(false)
+  const [budget, setBudget] = useState('medium')
+  const [bodyType, setBodyType] = useState('average')
+  const [colorPreference, setColorPreference] = useState('neutral')
   
   const { isAuthenticated, user } = useAuthStore()
 
@@ -45,17 +48,23 @@ export default function Recommendations() {
         occasion: selectedOccasion,
         weather: selectedWeather,
         stylePersonality: selectedStyle,
-        userPreferences: {},
+        userPreferences: {
+          budget,
+          bodyType,
+          colorPreference
+        },
         wardrobeItems: [],
-        bodyType: 'average',
-        colorPreferences: [],
-        budget: 'medium'
+        bodyType,
+        colorPreferences: [colorPreference],
+        budget
       })
 
       if (result.success) {
         setOutfits(result.data.outfits || [])
         if (result.data.isMock) {
           toast.info('Using demo data - configure OpenAI API key for AI-powered recommendations')
+        } else {
+          toast.success('AI outfit recommendations generated!')
         }
       } else {
         toast.error('Failed to load outfit recommendations')
@@ -83,8 +92,10 @@ export default function Recommendations() {
     const newFavorites = new Set(favorites)
     if (newFavorites.has(outfitId)) {
       newFavorites.delete(outfitId)
+      toast.success('Removed from favorites')
     } else {
       newFavorites.add(outfitId)
+      toast.success('Added to favorites')
     }
     setFavorites(newFavorites)
   }
@@ -134,6 +145,7 @@ export default function Recommendations() {
   return (
     <div className="min-h-screen py-12">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl flex items-center justify-center gap-3">
             <SparklesIcon className="h-8 w-8 text-primary-600" />
@@ -168,7 +180,7 @@ export default function Recommendations() {
                 }`}
               >
                 <UserGroupIcon className="h-5 w-5 inline mr-2" />
-                Style Influencers
+                Style Influencers & Live Sessions
               </button>
             </nav>
           </div>
@@ -185,7 +197,7 @@ export default function Recommendations() {
                   className="btn-secondary flex items-center gap-2"
                 >
                   <AdjustmentsHorizontalIcon className="h-5 w-5" />
-                  Filters
+                  {showFilters ? 'Hide Filters' : 'Show Filters'}
                 </button>
                 
                 <div className="flex items-center gap-2">
@@ -246,7 +258,11 @@ export default function Recommendations() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Budget Range
                       </label>
-                      <select className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                      <select 
+                        value={budget}
+                        onChange={(e) => setBudget(e.target.value)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                      >
                         <option value="low">Under $100</option>
                         <option value="medium">$100 - $300</option>
                         <option value="high">$300+</option>
@@ -256,7 +272,11 @@ export default function Recommendations() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Body Type
                       </label>
-                      <select className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                      <select 
+                        value={bodyType}
+                        onChange={(e) => setBodyType(e.target.value)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                      >
                         <option value="average">Average</option>
                         <option value="petite">Petite</option>
                         <option value="tall">Tall</option>
@@ -267,13 +287,25 @@ export default function Recommendations() {
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Color Preference
                       </label>
-                      <select className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500">
+                      <select 
+                        value={colorPreference}
+                        onChange={(e) => setColorPreference(e.target.value)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                      >
                         <option value="neutral">Neutral Colors</option>
                         <option value="bright">Bright Colors</option>
                         <option value="dark">Dark Colors</option>
                         <option value="pastel">Pastel Colors</option>
                       </select>
                     </div>
+                  </div>
+                  <div className="mt-4">
+                    <button 
+                      onClick={loadOutfitRecommendations}
+                      className="btn-primary"
+                    >
+                      Apply Filters & Generate New Outfits
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -306,38 +338,45 @@ export default function Recommendations() {
                       <div className="absolute top-3 left-3 bg-primary-600 text-white px-2 py-1 rounded-full text-sm font-medium">
                         {outfit.occasionScore}/10 Match
                       </div>
-                      <button
-                        onClick={() => toggleFavorite(outfit.id)}
-                        className="absolute top-3 right-3 p-2 rounded-full bg-white shadow-md hover:bg-gray-50"
-                      >
-                        {favorites.has(outfit.id) ? (
-                          <HeartIconSolid className="h-5 w-5 text-red-500" />
-                        ) : (
-                          <HeartIcon className="h-5 w-5 text-gray-600" />
-                        )}
-                      </button>
+                      <div className="absolute top-3 right-3 flex gap-2">
+                        <div className="bg-white rounded-full px-2 py-1 text-xs font-medium text-gray-700">
+                          {outfit.comfortScore}/10 Comfort
+                        </div>
+                        <button
+                          onClick={() => toggleFavorite(outfit.id)}
+                          className="p-2 rounded-full bg-white shadow-md hover:bg-gray-50"
+                        >
+                          {favorites.has(outfit.id) ? (
+                            <HeartIconSolid className="h-5 w-5 text-red-500" />
+                          ) : (
+                            <HeartIcon className="h-5 w-5 text-gray-600" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                     
                     <div className="p-6">
                       <div className="mb-3">
                         <h3 className="text-lg font-semibold text-gray-900">{outfit.name}</h3>
-                        <p className="text-sm text-gray-500">{outfit.estimatedCost}</p>
+                        <p className="text-sm text-primary-600 font-medium">{outfit.estimatedCost}</p>
                       </div>
                       
                       <div className="mb-3">
                         <p className="text-sm text-gray-600">{outfit.styleNotes}</p>
                       </div>
 
-                      <div className="mb-4">
-                        <div className="mb-2">
+                      <div className="mb-4 space-y-2">
+                        <div>
                           <span className="font-medium text-sm">Items: </span>
-                          <div className="text-sm text-gray-600 mt-1">
-                            <div>Top: {outfit.items?.top}</div>
-                            <div>Bottom: {outfit.items?.bottom}</div>
-                            <div>Shoes: {outfit.items?.shoes}</div>
+                          <div className="text-sm text-gray-600 mt-1 space-y-1">
+                            <div>• {outfit.items?.top}</div>
+                            <div>• {outfit.items?.bottom}</div>
+                            <div>• {outfit.items?.shoes}</div>
+                            {outfit.items?.outerwear && <div>• {outfit.items.outerwear}</div>}
                           </div>
                         </div>
-                        <div className="mt-2">
+                        
+                        <div>
                           <span className="font-medium text-sm">Colors: </span>
                           <div className="flex gap-1 mt-1">
                             {outfit.colorScheme?.map((color, idx) => (
@@ -350,9 +389,10 @@ export default function Recommendations() {
                             ))}
                           </div>
                         </div>
-                        <div className="mt-2">
+                        
+                        <div>
                           <span className="font-medium text-sm">Tags: </span>
-                          <div className="flex gap-1 mt-1">
+                          <div className="flex gap-1 mt-1 flex-wrap">
                             {outfit.tags?.map((tag, idx) => (
                               <span
                                 key={idx}
@@ -363,6 +403,17 @@ export default function Recommendations() {
                             ))}
                           </div>
                         </div>
+
+                        {outfit.stylingTips && outfit.stylingTips.length > 0 && (
+                          <div>
+                            <span className="font-medium text-sm">Styling Tips: </span>
+                            <ul className="text-sm text-gray-600 mt-1 space-y-1">
+                              {outfit.stylingTips.slice(0, 2).map((tip, idx) => (
+                                <li key={idx}>• {tip}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex gap-2">
@@ -392,57 +443,82 @@ export default function Recommendations() {
                 </button>
               </div>
             )}
+
+            {/* Empty State */}
+            {!loading && outfits.length === 0 && (
+              <div className="text-center py-12">
+                <SparklesIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No outfits generated yet</h3>
+                <p className="text-gray-600 mb-4">Click the button below to generate your first AI outfit recommendations!</p>
+                <button 
+                  onClick={loadOutfitRecommendations}
+                  className="btn-primary"
+                >
+                  Generate Outfit Recommendations
+                </button>
+              </div>
+            )}
           </>
         )}
 
         {/* Influencer Partnerships Tab */}
         {activeTab === 'influencers' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {influencers.map((influencer, index) => (
-              <motion.div
-                key={influencer.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="card p-6 hover:shadow-lg transition-shadow"
-              >
-                <div className="text-center mb-4">
-                  <img
-                    src={influencer.avatar}
-                    alt={influencer.name}
-                    className="w-20 h-20 rounded-full mx-auto mb-3"
-                  />
-                  <h3 className="text-lg font-semibold text-gray-900">{influencer.name}</h3>
-                  <p className="text-sm text-gray-500">{influencer.specialty}</p>
-                  <div className="flex items-center justify-center gap-2 mt-2">
-                    <span className="text-sm text-gray-600">{influencer.followers} followers</span>
-                    <span className="text-sm text-yellow-600">★ {influencer.rating}</span>
-                  </div>
-                </div>
-                
-                <p className="text-sm text-gray-600 mb-4 text-center">{influencer.bio}</p>
-                
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Session Price:</span>
-                    <span className="text-sm text-primary-600 font-semibold">{influencer.sessionPrice}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium">Availability:</span>
-                    <span className="text-sm text-green-600">{influencer.availability}</span>
-                  </div>
-                </div>
-                
-                <button 
-                  onClick={() => bookStylingSession(influencer.id)}
-                  className="w-full btn-primary mt-4 flex items-center justify-center gap-2"
+          <>
+            <div className="mb-8 text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Style Influencers & Live Sessions</h2>
+              <p className="text-gray-600">Connect with professional stylists and fashion influencers for personalized styling sessions</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {influencers.map((influencer, index) => (
+                <motion.div
+                  key={influencer.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="card p-6 hover:shadow-lg transition-shadow"
                 >
-                  <CalendarIcon className="h-4 w-4" />
-                  Book Session
-                </button>
-              </motion.div>
-            ))}
-          </div>
+                  <div className="text-center mb-4">
+                    <img
+                      src={influencer.avatar}
+                      alt={influencer.name}
+                      className="w-20 h-20 rounded-full mx-auto mb-3"
+                    />
+                    <h3 className="text-lg font-semibold text-gray-900">{influencer.name}</h3>
+                    <p className="text-sm text-gray-500">{influencer.specialty}</p>
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      <span className="text-sm text-gray-600">{influencer.followers} followers</span>
+                      <div className="flex items-center">
+                        <StarIcon className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-sm text-gray-600 ml-1">{influencer.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 mb-4 text-center">{influencer.bio}</p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Session Price:</span>
+                      <span className="text-sm text-primary-600 font-semibold">{influencer.sessionPrice}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium">Availability:</span>
+                      <span className="text-sm text-green-600">{influencer.availability}</span>
+                    </div>
+                  </div>
+                  
+                  <button 
+                    onClick={() => bookStylingSession(influencer.id)}
+                    className="w-full btn-primary mt-4 flex items-center justify-center gap-2"
+                  >
+                    <CalendarIcon className="h-4 w-4" />
+                    Book Live Session
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>
