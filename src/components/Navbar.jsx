@@ -14,6 +14,7 @@ const authenticatedNavigation = [
   { name: 'AR Try-On', href: '/ar-try-on' },
   { name: 'Wardrobe', href: '/wardrobe' },
   { name: 'Recommendations', href: '/recommendations' },
+  { name: 'AI Outfits', href: '/outfits' },
   { name: 'Pricing', href: '/pricing' }
 ]
 
