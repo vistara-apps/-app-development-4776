@@ -1,44 +1,65 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { CameraIcon } from '@heroicons/react/24/outline'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
+import { handleError } from '../utils/errorHandling'
 
 export default function Profile() {
-  const { user, updateProfile, bodyMeasurements, setBodyMeasurements, subscription } = useAuthStore()
+  const { user, profile, updateProfile, bodyMeasurements, setBodyMeasurements, subscription } = useAuth()
   const [activeTab, setActiveTab] = useState('profile')
+  const [isLoading, setIsLoading] = useState(false)
   
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    defaultValues: {
-      name: user?.name || '',
-      email: user?.email || '',
-      height: bodyMeasurements?.height || '',
-      weight: bodyMeasurements?.weight || '',
-      chest: bodyMeasurements?.chest || '',
-      waist: bodyMeasurements?.waist || '',
-      hips: bodyMeasurements?.hips || ''
-    }
-  })
+  const { register, handleSubmit, reset, formState: { errors } } = useForm()
 
-  const onSubmitProfile = (data) => {
-    updateProfile({
-      name: data.name,
-      email: data.email
-    })
-    toast.success('Profile updated successfully!')
+  // Update form when profile data loads
+  useEffect(() => {
+    if (user && profile) {
+      reset({
+        full_name: profile?.full_name || '',
+        email: user?.email || '',
+        height: bodyMeasurements?.height || '',
+        weight: bodyMeasurements?.weight || '',
+        chest: bodyMeasurements?.chest || '',
+        waist: bodyMeasurements?.waist || '',
+        hips: bodyMeasurements?.hips || ''
+      })
+    }
+  }, [user, profile, bodyMeasurements, reset])
+
+  const onSubmitProfile = async (data) => {
+    setIsLoading(true)
+    try {
+      await updateProfile({
+        full_name: data.full_name,
+        email: data.email
+      })
+      toast.success('Profile updated successfully!')
+    } catch (error) {
+      handleError(error, 'Profile update')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const onSubmitMeasurements = (data) => {
-    const measurements = {
-      height: data.height,
-      weight: data.weight,
-      chest: data.chest,
-      waist: data.waist,
-      hips: data.hips
+  const onSubmitMeasurements = async (data) => {
+    setIsLoading(true)
+    try {
+      const measurements = {
+        height: data.height,
+        weight: data.weight,
+        chest: data.chest,
+        waist: data.waist,
+        hips: data.hips
+      }
+      await setBodyMeasurements(measurements)
+      toast.success('Body measurements updated successfully!')
+    } catch (error) {
+      handleError(error, 'Measurements update')
+    } finally {
+      setIsLoading(false)
     }
-    setBodyMeasurements(measurements)
-    toast.success('Body measurements updated successfully!')
   }
 
   const tabs = [
@@ -109,11 +130,11 @@ export default function Profile() {
                   </label>
                   <input
                     type="text"
-                    {...register('name', { required: 'Name is required' })}
+                    {...register('full_name', { required: 'Name is required' })}
                     className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                   />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+                  {errors.full_name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.full_name.message}</p>
                   )}
                 </div>
 
@@ -137,8 +158,12 @@ export default function Profile() {
                   )}
                 </div>
 
-                <button type="submit" className="btn-primary">
-                  Update Profile
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Updating...' : 'Update Profile'}
                 </button>
               </form>
             </motion.div>
@@ -219,8 +244,12 @@ export default function Profile() {
                   </div>
                 </div>
 
-                <button type="submit" className="btn-primary">
-                  Update Measurements
+                <button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Updating...' : 'Update Measurements'}
                 </button>
               </form>
             </motion.div>

@@ -15,14 +15,28 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 })
 
-// Helper function to get current user
+// Database table names
+export const TABLES = {
+  USERS: 'users',
+  PROFILES: 'profiles'
+}
+
+// Helper functions for common operations
 export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser()
-  if (error) {
-    console.error('Error getting current user:', error)
-    return null
-  }
+  if (error) throw error
   return user
+}
+
+export const getCurrentSession = async () => {
+  const { data: { session }, error } = await supabase.auth.getSession()
+  if (error) throw error
+  return session
+}
+
+export const signOut = async () => {
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
 }
 
 // Helper function to get user profile
@@ -71,4 +85,3 @@ export const getSubscriptionStatus = async (userId) => {
   }
   return data
 }
-
