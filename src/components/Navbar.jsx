@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -12,7 +12,7 @@ const navigation = [
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { isAuthenticated, user, logout } = useAuthStore()
+  const { isAuthenticated, user, profile, logout } = useAuth()
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-soft border-b border-neutral-200/50">
@@ -44,9 +44,9 @@ export default function Navbar() {
                   className="flex items-center space-x-2 text-neutral-700 hover:text-primary-600 px-3 py-2 rounded-xl text-sm font-medium transition-colors duration-200"
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-semibold">
-                    {user?.name?.charAt(0) || 'U'}
+                    {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                   </div>
-                  <span>{user?.name}</span>
+                  <span>{profile?.full_name || user?.email}</span>
                 </Link>
                 <button
                   onClick={logout}
@@ -105,7 +105,7 @@ export default function Navbar() {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary-500 to-primary-600 flex items-center justify-center text-white text-xs font-semibold">
-                        {user?.name?.charAt(0) || 'U'}
+                        {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || 'U'}
                       </div>
                       <span>Profile</span>
                     </Link>
