@@ -3,7 +3,8 @@ import { motion } from 'framer-motion'
 import { CameraIcon, PhotoIcon } from '@heroicons/react/24/outline'
 import { toast } from 'react-hot-toast'
 import useTryOnStore from '../store/tryOnStore'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
+import { generateVirtualTryOn, validateApiKey } from '../services/aiService'
 import ProductSelector from '../components/ProductSelector'
 import VirtualResult from '../components/VirtualResult'
 
@@ -19,7 +20,7 @@ export default function VirtualTryOn() {
     setVirtualResult,
     setIsGenerating 
   } = useTryOnStore()
-  const { isAuthenticated, subscription } = useAuthStore()
+  const { isAuthenticated, subscription } = useAuth()
 
   const handlePhotoUpload = (event) => {
     const file = event.target.files[0]
@@ -38,7 +39,7 @@ export default function VirtualTryOn() {
     }
   }
 
-  const generateVirtualTryOn = async () => {
+  const generateVirtualTryOnResult = async () => {
     if (!selectedProduct || !userPhoto) {
       toast.error('Please select a product and upload a photo')
       return
@@ -49,7 +50,7 @@ export default function VirtualTryOn() {
       return
     }
 
-    if (!subscription) {
+    if (!subscription?.active) {
       toast.error('Please upgrade to a paid plan to use virtual try-on')
       return
     }
@@ -57,26 +58,30 @@ export default function VirtualTryOn() {
     setIsGenerating(true)
     
     try {
-      // Simulate API call to generate virtual try-on
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Validate API key first
+      validateApiKey()
       
-      // Mock result
-      setVirtualResult({
-        image: userPhoto, // In real implementation, this would be the generated image
-        confidence: 0.95,
-        feedback: {
-          fit: 'Great fit!',
-          style: 'This style suits you well',
-          recommendations: ['Try a smaller size for a more fitted look', 'This color complements your skin tone']
-        }
-      })
+      // Generate virtual try-on using AI
+      const result = await generateVirtualTryOn(
+        userPhoto, 
+        selectedProduct.image, 
+        selectedProduct
+      )
       
+      setVirtualResult(result)
       setStep(4)
       toast.success('Virtual try-on generated successfully!')
       
     } catch (error) {
-      toast.error('Failed to generate virtual try-on')
-      console.error(error)
+      console.error('Virtual try-on error:', error)
+      
+      if (error.message.includes('API key')) {
+        toast.error('AI service not configured. Please contact support.')
+      } else if (error.message.includes('quota') || error.message.includes('billing')) {
+        toast.error('AI service temporarily unavailable. Please try again later.')
+      } else {
+        toast.error('Failed to generate virtual try-on. Please try again.')
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -315,7 +320,7 @@ export default function VirtualTryOn() {
                   </div>
                 ) : (
                   <button
-                    onClick={generateVirtualTryOn}
+                    onClick={generateVirtualTryOnResult}
                     disabled={!selectedProduct || !userPhoto}
                     className="btn-primary btn-xl disabled:opacity-50 disabled:cursor-not-allowed group"
                   >

@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { register: registerUser } = useAuth()
+  const navigate = useNavigate()
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
@@ -16,22 +17,18 @@ export default function Register() {
     setIsLoading(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      const result = await registerUser(data.email, data.password, data.name)
       
-      // Mock successful registration
-      login({
-        id: 1,
-        name: data.name,
-        email: data.email,
-        subscription: { plan: 'free', active: true }
-      })
-      
-      toast.success('Account created successfully!')
-      window.location.href = '/profile'
-      
+      if (result.user) {
+        toast.success('Account created successfully! Please check your email to verify your account.')
+        navigate('/profile')
+      } else {
+        toast.success('Please check your email to verify your account before signing in.')
+        navigate('/login')
+      }
     } catch (error) {
-      toast.error('Failed to create account. Please try again.')
+      console.error('Registration error:', error)
+      toast.error(error.message || 'Failed to create account. Please try again.')
     } finally {
       setIsLoading(false)
     }

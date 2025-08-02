@@ -1,36 +1,31 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const { login } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
+
+  // Get the page user was trying to access before login
+  const from = location.state?.from?.pathname || '/'
 
   const onSubmit = async (data) => {
     setIsLoading(true)
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Mock successful login
-      login({
-        id: 1,
-        name: 'Demo User',
-        email: data.email,
-        subscription: { plan: 'basic', active: true }
-      })
-      
+      await login(data.email, data.password)
       toast.success('Welcome back!')
-      window.location.href = '/'
-      
+      navigate(from, { replace: true })
     } catch (error) {
-      toast.error('Invalid email or password')
+      console.error('Login error:', error)
+      toast.error(error.message || 'Invalid email or password')
     } finally {
       setIsLoading(false)
     }
