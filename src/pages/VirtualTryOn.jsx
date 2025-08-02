@@ -6,6 +6,7 @@ import useTryOnStore from '../store/tryOnStore'
 import useAuthStore from '../store/authStore'
 import ProductSelector from '../components/ProductSelector'
 import VirtualResult from '../components/VirtualResult'
+import { aiService } from '../services/aiService'
 
 export default function VirtualTryOn() {
   const [step, setStep] = useState(1)
@@ -49,34 +50,71 @@ export default function VirtualTryOn() {
       return
     }
 
-    if (!subscription) {
-      toast.error('Please upgrade to a paid plan to use virtual try-on')
-      return
-    }
+    // For demo purposes, we'll allow free users to try the feature
+    // In production, you might want to limit usage based on subscription
+    // if (!subscription) {
+    //   toast.error('Please upgrade to a paid plan to use virtual try-on')
+    //   return
+    // }
 
     setIsGenerating(true)
     
     try {
-      // Simulate API call to generate virtual try-on
-      await new Promise(resolve => setTimeout(resolve, 3000))
-      
-      // Mock result
-      setVirtualResult({
-        image: userPhoto, // In real implementation, this would be the generated image
-        confidence: 0.95,
-        feedback: {
-          fit: 'Great fit!',
-          style: 'This style suits you well',
-          recommendations: ['Try a smaller size for a more fitted look', 'This color complements your skin tone']
+      // Check if OpenAI API key is configured
+      if (!import.meta.env.VITE_OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY === 'your_openai_api_key') {
+        // Fallback to mock response if API key is not configured
+        toast.info('Using demo mode - configure OpenAI API key for full AI functionality')
+        
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        setVirtualResult({
+          image: userPhoto,
+          confidence: 0.85,
+          feedback: {
+            fit: 'Demo mode: This item appears to be a good fit based on your photo',
+            style: 'Demo mode: The style complements your appearance well',
+            recommendations: [
+              'Configure OpenAI API key for detailed AI analysis',
+              'This is a demo response - real AI would provide personalized feedback'
+            ]
+          },
+          analysis: 'Demo mode active. Configure your OpenAI API key in the .env file to enable full AI-powered virtual try-on analysis.'
+        })
+      } else {
+        // Use real AI service
+        const result = await aiService.generateVirtualTryOn(
+          userPhoto,
+          selectedProduct.image,
+          selectedProduct
+        )
+
+        if (result.success) {
+          setVirtualResult(result.result)
+          toast.success('AI-powered virtual try-on generated successfully!')
+        } else {
+          // Use fallback response if AI service fails
+          setVirtualResult(result.fallback)
+          toast.warning('AI service unavailable - showing fallback analysis')
         }
-      })
+      }
       
       setStep(4)
-      toast.success('Virtual try-on generated successfully!')
       
     } catch (error) {
       toast.error('Failed to generate virtual try-on')
-      console.error(error)
+      console.error('Virtual try-on error:', error)
+      
+      // Fallback to basic response
+      setVirtualResult({
+        image: userPhoto,
+        confidence: 0.75,
+        feedback: {
+          fit: 'Unable to analyze - please try again',
+          style: 'Analysis unavailable',
+          recommendations: ['Please try again later', 'Check your internet connection']
+        }
+      })
+      setStep(4)
     } finally {
       setIsGenerating(false)
     }

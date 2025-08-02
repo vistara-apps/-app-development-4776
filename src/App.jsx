@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { AuthProvider } from './contexts/AuthContext'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import VirtualTryOn from './pages/VirtualTryOn'
@@ -8,8 +9,21 @@ import Profile from './pages/Profile'
 import Pricing from './pages/Pricing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import LoadingSpinner from './components/LoadingSpinner'
+import useAuthStore from './store/authStore'
 
-function App() {
+function AppContent() {
+  const { initialized } = useAuthStore()
+
+  // Show loading spinner while initializing auth
+  if (!initialized) {
+    return (
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <LoadingSpinner size="large" />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-neutral-50">
       <Navbar />
@@ -35,6 +49,14 @@ function App() {
         }}
       />
     </div>
+  )
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 
