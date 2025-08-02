@@ -1,7 +1,10 @@
 import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { useAuth } from './hooks/useAuth'
 import Navbar from './components/Navbar'
+import LoadingSpinner from './components/LoadingSpinner'
+import ProtectedRoute from './components/ProtectedRoute'
 import Home from './pages/Home'
 import VirtualTryOn from './pages/VirtualTryOn'
 import Recommendations from './pages/Recommendations'
@@ -12,23 +15,12 @@ import Register from './pages/Register'
 import useAuthStore from './store/authStore'
 
 function App() {
-  const { initialize, isLoading } = useAuthStore()
+  const { isLoading } = useAuth()
 
-  useEffect(() => {
-    // Initialize auth state on app start
-    initialize()
-  }, [initialize])
-
-  // Show loading spinner while initializing auth
   if (isLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 mx-auto mb-4">
-            <div className="loading-spinner w-16 h-16 border-4"></div>
-          </div>
-          <p className="text-neutral-600">Loading...</p>
-        </div>
+        <LoadingSpinner size="xl" text="Initializing..." />
       </div>
     )
   }
@@ -39,9 +31,30 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/try-on" element={<VirtualTryOn />} />
-          <Route path="/recommendations" element={<Recommendations />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route 
+            path="/try-on" 
+            element={
+              <ProtectedRoute requireSubscription={true}>
+                <VirtualTryOn />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/recommendations" 
+            element={
+              <ProtectedRoute>
+                <Recommendations />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } 
+          />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
