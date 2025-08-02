@@ -1,40 +1,26 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import useAuthStore from '../store/authStore'
 
 export default function Register() {
-  const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuthStore()
+  const navigate = useNavigate()
+  const { register: registerUser, isLoading } = useAuthStore()
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
 
   const onSubmit = async (data) => {
-    setIsLoading(true)
+    const result = await registerUser(data.email, data.password, {
+      name: data.name
+    })
     
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Mock successful registration
-      login({
-        id: 1,
-        name: data.name,
-        email: data.email,
-        subscription: { plan: 'free', active: true }
-      })
-      
-      toast.success('Account created successfully!')
-      window.location.href = '/profile'
-      
-    } catch (error) {
-      toast.error('Failed to create account. Please try again.')
-    } finally {
-      setIsLoading(false)
+    if (result?.success) {
+      navigate('/login')
     }
+    // Error handling is done in the store
   }
 
   return (
