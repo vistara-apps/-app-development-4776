@@ -1,31 +1,35 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
-import useAuthStore from '../store/authStore'
 
 export default function Register() {
   const [isLoading, setIsLoading] = useState(false)
-  const { register: registerUser } = useAuth()
+  const { signUp, register: registerUser, isAuthenticated } = useAuth()
   const navigate = useNavigate()
-  const { signUp } = useAuthStore()
   
   const { register, handleSubmit, watch, formState: { errors } } = useForm()
   const password = watch('password')
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true })
+    }
+  }, [isAuthenticated, navigate])
+
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const result = await registerUser(data.email, data.password, data.name)
+      // Try new signUp method first
+      const result = await signUp(data.email, data.password, {
+        full_name: data.name
+      })
       
-      if (result.user) {
-        toast.success('Account created successfully! Please check your email to verify your account.')
-        navigate('/profile')
-      } else {
-        toast.success('Please check your email to verify your account before signing in.')
-        navigate('/login')
+      if (result.success) {
+        navigate('/login', { replace: true })
       }
     } catch (error) {
       console.error('Registration error:', error)
@@ -173,9 +177,16 @@ export default function Register() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Creating account...' : 'Create account'}
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Creating account...
+                </div>
+              ) : (
+                'Create account'
+              )}
             </button>
           </div>
 

@@ -1,4 +1,5 @@
 import React from 'react'
+import { motion } from 'framer-motion'
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline'
 
 class ErrorBoundary extends React.Component {
@@ -21,8 +22,10 @@ class ErrorBoundary extends React.Component {
       errorInfo
     })
     
-    // You can also log the error to an error reporting service here
-    // logErrorToService(error, errorInfo)
+    // Log error to console in development
+    if (import.meta.env.DEV) {
+      console.error('Error caught by boundary:', error, errorInfo)
+    }
   }
 
   handleReload = () => {
@@ -35,11 +38,15 @@ class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
-      // Custom fallback UI
+      // Custom fallback UI combining both approaches
       return (
-        <div className="min-h-screen bg-neutral-50 flex items-center justify-center px-4">
-          <div className="max-w-md w-full">
-            <div className="card-elevated p-8 text-center">
+        <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="max-w-md w-full text-center"
+          >
+            <div className="bg-white rounded-2xl shadow-soft p-8">
               <div className="w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
                 <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
               </div>
@@ -66,29 +73,30 @@ class ErrorBoundary extends React.Component {
                 >
                   Go to Home
                 </button>
+                
+                <button
+                  onClick={() => this.setState({ hasError: false, error: null, errorInfo: null })}
+                  className="btn-secondary w-full"
+                >
+                  Try Again
+                </button>
               </div>
               
-              {/* Show error details in development */}
-              {process.env.NODE_ENV === 'development' && (
-                <details className="mt-8 text-left">
-                  <summary className="cursor-pointer text-sm text-neutral-500 hover:text-neutral-700">
-                    Show error details (Development only)
+              {import.meta.env.DEV && this.state.error && (
+                <details className="mt-6 text-left">
+                  <summary className="text-sm text-neutral-500 cursor-pointer">
+                    Error Details (Development)
                   </summary>
-                  <div className="mt-4 p-4 bg-neutral-100 rounded-lg text-xs font-mono text-neutral-700 overflow-auto max-h-40">
-                    <div className="mb-2">
-                      <strong>Error:</strong> {this.state.error && this.state.error.toString()}
-                    </div>
-                    <div>
-                      <strong>Stack trace:</strong>
-                      <pre className="whitespace-pre-wrap mt-1">
-                        {this.state.errorInfo && this.state.errorInfo.componentStack}
-                      </pre>
-                    </div>
+                  <div className="mt-2 p-4 bg-red-50 rounded-lg">
+                    <pre className="text-xs text-red-600 overflow-auto">
+                      {this.state.error.toString()}
+                      {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </pre>
                   </div>
                 </details>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       )
     }
@@ -99,4 +107,3 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary
-

@@ -1,29 +1,37 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
 import { useAuth } from '../hooks/useAuth'
-import useAuthStore from '../store/authStore'
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false)
-  const { login } = useAuth()
+  const { signIn, login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const { signIn } = useAuthStore()
   
   const { register, handleSubmit, formState: { errors } } = useForm()
 
   // Get the page user was trying to access before login
   const from = location.state?.from?.pathname || '/'
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true })
+    }
+  }, [isAuthenticated, navigate, from])
+
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      await login(data.email, data.password)
-      toast.success('Welcome back!')
-      navigate(from, { replace: true })
+      // Try new signIn method first, fallback to legacy login
+      const result = await signIn(data.email, data.password)
+      
+      if (result.success) {
+        navigate(from, { replace: true })
+      }
     } catch (error) {
       console.error('Login error:', error)
       toast.error(error.message || 'Invalid email or password')
@@ -122,9 +130,16 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Signing in...
+                </div>
+              ) : (
+                'Sign in'
+              )}
             </button>
           </div>
 

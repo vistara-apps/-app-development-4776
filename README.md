@@ -1,33 +1,51 @@
-# TryOn.ai - Virtual Try-On Application
+# TryOn.ai - Virtual Wardrobe Management & AI-Powered Virtual Try-On
 
-A modern React application with AI-powered virtual try-on functionality, built with Supabase authentication and real-time AI integration.
+A modern React application that combines virtual wardrobe management with AI-powered virtual try-on functionality and social sharing features.
 
 ## Features
 
-- 🔐 **Secure Authentication** - Powered by Supabase with email/password and social login support
-- 🤖 **AI Virtual Try-On** - Advanced AI integration for realistic virtual clothing try-on
-- 👤 **User Profiles** - Personalized user profiles with style preferences and body measurements
-- 💳 **Subscription Management** - Tiered subscription system with different feature access
-- 📱 **Responsive Design** - Modern, mobile-first design with smooth animations
-- 🔄 **Real-time Updates** - Live session management and state synchronization
+### Virtual Try-On
+- **AI-Powered Analysis**: Upload your photo and try on clothing virtually using OpenAI's vision models
+- **Realistic Feedback**: Get detailed analysis on fit, style, and color coordination
+- **Multiple Product Categories**: Support for tops, bottoms, dresses, and accessories
+- **Subscription-Based Access**: Premium features require active subscription
+
+### Virtual Wardrobe Management
+- **Digital Closet**: Organize and manage your clothing items digitally
+- **Style Recommendations**: AI-powered suggestions based on your preferences
+- **Outfit Planning**: Plan and save outfit combinations
+- **Wardrobe Analytics**: Track usage and optimize your clothing choices
+
+### Social Sharing
+- **Multi-Platform Sharing**: Share your virtual try-on results and outfits
+- **Social Modal**: Integrated sharing interface for various platforms
+- **Privacy Controls**: Control what you share and with whom
+
+### Authentication & User Management
+- **Supabase Authentication**: Secure user registration and login
+- **User Profiles**: Manage personal information and preferences
+- **Body Measurements**: Store measurements for better fit analysis
+- **Subscription Management**: Handle different plan tiers and features
 
 ## Tech Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion
-- **State Management**: Zustand
+- **Frontend**: React 18, Vite, TailwindCSS
+- **Animation**: Framer Motion
 - **Authentication**: Supabase Auth
 - **Database**: Supabase (PostgreSQL)
-- **AI Integration**: OpenAI API / Custom AI endpoints
+- **AI Integration**: OpenAI GPT-4 Vision
+- **State Management**: Zustand
+- **Form Handling**: React Hook Form
+- **Notifications**: React Hot Toast
 - **Routing**: React Router DOM
-- **UI Components**: Headless UI, Heroicons
 
 ## Quick Start
 
 ### Prerequisites
-
-- Node.js 18+ and npm
-- Supabase account and project
-- AI API key (OpenAI or custom AI service)
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+- OpenAI API key (optional, for AI features)
 
 ### Installation
 
@@ -44,192 +62,225 @@ A modern React application with AI-powered virtual try-on functionality, built w
 
 3. **Environment Setup**
    
-   Copy the `.env` file and update with your credentials:
+   Copy the example environment file:
    ```bash
-   cp .env .env.local
+   cp .env.example .env
    ```
    
-   Update the following variables in `.env.local`:
+   Configure your environment variables:
    ```env
    # Supabase Configuration
    VITE_SUPABASE_URL=your_supabase_project_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    
-   # AI API Configuration
+   # AI Service Configuration
+   VITE_OPENAI_API_KEY=your_openai_api_key
+   VITE_AI_API_URL=your_ai_api_url
    VITE_AI_API_KEY=your_ai_api_key
-   VITE_AI_API_ENDPOINT=https://api.openai.com/v1
    
-   # Optional: Custom AI service
-   VITE_CUSTOM_AI_ENDPOINT=your_custom_ai_endpoint
+   # Application Configuration
+   VITE_APP_URL=http://localhost:5173
+   VITE_APP_ENV=development
    ```
 
-4. **Database Setup**
+4. **Supabase Setup**
    
-   Run the migration in your Supabase SQL editor:
+   Create the following tables in your Supabase database:
+   
    ```sql
-   -- Copy and paste the contents of supabase/migrations/001_create_user_profiles.sql
+   -- Profiles table
+   CREATE TABLE profiles (
+     id UUID REFERENCES auth.users PRIMARY KEY,
+     email TEXT,
+     full_name TEXT,
+     avatar_url TEXT,
+     body_measurements JSONB,
+     created_at TIMESTAMP DEFAULT NOW(),
+     updated_at TIMESTAMP DEFAULT NOW()
+   );
+   
+   -- Subscriptions table
+   CREATE TABLE subscriptions (
+     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+     user_id UUID REFERENCES auth.users,
+     plan TEXT NOT NULL,
+     active BOOLEAN DEFAULT true,
+     expires_at TIMESTAMP,
+     created_at TIMESTAMP DEFAULT NOW()
+   );
+   
+   -- Wardrobe items table
+   CREATE TABLE wardrobe_items (
+     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+     user_id UUID REFERENCES auth.users,
+     name TEXT NOT NULL,
+     category TEXT,
+     color TEXT,
+     brand TEXT,
+     image_url TEXT,
+     metadata JSONB,
+     created_at TIMESTAMP DEFAULT NOW()
+   );
+   
+   -- Try-on sessions table
+   CREATE TABLE try_on_sessions (
+     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+     user_id UUID REFERENCES auth.users,
+     product_data JSONB,
+     result_data JSONB,
+     created_at TIMESTAMP DEFAULT NOW()
+   );
    ```
 
-5. **Start the development server**
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-## Supabase Configuration
+6. **Build for production**
+   ```bash
+   npm run build
+   ```
 
-### Required Tables
-
-The application requires the following database tables (created by the migration):
-
-- `profiles` - User profile information
-- `subscriptions` - User subscription status
-- `tryon_history` - Virtual try-on history
-
-### Authentication Setup
-
-1. Enable email authentication in your Supabase project
-2. Configure email templates (optional)
-3. Set up OAuth providers if needed (Google, Facebook, etc.)
-
-### Row Level Security (RLS)
-
-The migration automatically sets up RLS policies to ensure users can only access their own data.
-
-## AI Integration
-
-### Supported AI Services
-
-1. **OpenAI DALL-E** - For image generation
-2. **Custom AI Endpoints** - For specialized virtual try-on models
-
-### Configuration
-
-Set the appropriate environment variables based on your AI service:
-
-- For OpenAI: Set `VITE_AI_API_KEY` and use default `VITE_AI_API_ENDPOINT`
-- For custom services: Set `VITE_CUSTOM_AI_ENDPOINT` and `VITE_AI_API_KEY`
-
-## Usage
-
-### Authentication Flow
-
-1. Users can register with email/password
-2. Email verification is handled by Supabase
-3. Sessions persist across browser restarts
-4. Automatic token refresh
-
-### Virtual Try-On Process
-
-1. **Upload Photo** - Users upload a clear photo of themselves
-2. **Select Product** - Choose from available clothing items
-3. **AI Generation** - AI processes the images and generates try-on result
-4. **View Results** - See the virtual try-on with confidence scores and feedback
-
-### Subscription System
-
-- **Free Tier** - Limited try-on attempts
-- **Paid Tiers** - Unlimited access with premium features
-
-## Development
-
-### Project Structure
+## Project Structure
 
 ```
 src/
-├── components/          # Reusable UI components
-├── pages/              # Page components
-├── store/              # Zustand stores
-├── lib/                # Utility libraries
-│   ├── supabase.js     # Supabase client configuration
-│   └── aiApi.js        # AI API integration
-└── styles/             # CSS and styling
+├── components/          # Reusable React components
+│   ├── ErrorBoundary.jsx      # Global error boundary
+│   ├── LoadingSpinner.jsx     # Loading indicators
+│   ├── Navbar.jsx             # Navigation component
+│   ├── ProtectedRoute.jsx     # Route protection
+│   ├── SocialShareModal.jsx   # Social sharing
+│   └── VirtualResult.jsx      # Try-on results display
+├── hooks/               # Custom React hooks
+│   ├── useAuth.js              # Authentication hook
+│   └── useSocialShare.js       # Social sharing hook
+├── lib/                 # Core utilities
+│   └── supabase.js             # Supabase client setup
+├── pages/               # Page components
+│   ├── Home.jsx                # Landing page
+│   ├── Login.jsx               # Authentication pages
+│   ├── Register.jsx
+│   ├── Profile.jsx             # User profile
+│   ├── VirtualTryOn.jsx        # Try-on interface
+│   ├── Wardrobe.jsx            # Wardrobe management
+│   ├── Recommendations.jsx     # AI recommendations
+│   └── Pricing.jsx             # Subscription plans
+├── services/            # External service integrations
+│   ├── aiService.js            # OpenAI integration
+│   ├── userService.js          # User data management
+│   └── subscriptionService.js  # Subscription handling
+├── store/               # State management
+│   └── authStore.js            # Authentication state
+├── utils/               # Utility functions
+│   ├── aiApi.js                # AI API helpers
+│   ├── errorHandling.js        # Error management
+│   └── socialSharing.js        # Social sharing utilities
+├── config/              # Configuration files
+│   └── env.js                  # Environment validation
+├── App.jsx              # Main application component
+└── main.jsx             # Application entry point
 ```
 
-### Key Components
+## Key Features Implementation
 
-- `useAuthStore` - Authentication state management
-- `VirtualTryOn` - Main try-on interface
-- `Navbar` - Navigation with auth status
-- `ProductSelector` - Product selection interface
+### Authentication Flow
+- Automatic session management with Supabase
+- Protected routes with subscription checking
+- Profile management with body measurements
+- Password reset functionality
 
-### API Integration
+### Virtual Try-On Process
+1. **Photo Upload**: Users upload their photo with size validation
+2. **Product Selection**: Choose from available clothing items
+3. **AI Processing**: Generate virtual try-on using OpenAI's vision models
+4. **Results Display**: Show realistic try-on with fit analysis and recommendations
 
-The AI API integration supports:
-- Multiple AI service providers
-- Fallback handling for failed requests
-- Progress tracking and user feedback
-- Error recovery and retry logic
+### Wardrobe Management
+- Digital inventory of clothing items
+- Category-based organization
+- Style preference tracking
+- Outfit combination suggestions
 
-## Deployment
+### Social Sharing
+- Multi-platform sharing support
+- Privacy-controlled sharing options
+- Integrated sharing modals
+- Social media optimization
 
-### Environment Variables
+## Environment Variables
 
-Ensure all environment variables are set in your deployment platform:
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_SUPABASE_URL` | Supabase project URL | Yes |
+| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
+| `VITE_OPENAI_API_KEY` | OpenAI API key for AI features | Optional* |
+| `VITE_AI_API_URL` | Custom AI API endpoint | Optional |
+| `VITE_AI_API_KEY` | Custom AI API key | Optional |
+| `VITE_APP_URL` | Application base URL | Yes |
+| `VITE_APP_ENV` | Environment (development/production) | Yes |
 
-```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-VITE_AI_API_KEY=your_ai_api_key
-VITE_AI_API_ENDPOINT=your_ai_endpoint
-```
+*\* If not provided, AI features will use mock data*
 
-### Build
+## API Integration
 
-```bash
-npm run build
-```
+### OpenAI Integration
+- Uses GPT-4 Vision for virtual try-on analysis
+- Provides detailed feedback on fit, style, and color
+- Generates personalized recommendations
+- Fallback to mock data when API is unavailable
 
-### Preview
+### Supabase Integration
+- Real-time authentication
+- User profile management
+- Subscription handling
+- Data persistence for wardrobe and try-on sessions
 
-```bash
-npm run preview
-```
+## Production Deployment
 
-## Troubleshooting
+### Security Considerations
+- API keys should be stored securely (not in frontend in production)
+- Implement proper CORS settings
+- Use environment-specific configurations
+- Enable RLS (Row Level Security) in Supabase
 
-### Common Issues
+### Performance Optimization
+- Image compression for virtual try-on
+- Lazy loading of components
+- Efficient state management
+- CDN for static assets
 
-1. **Authentication not persisting**
-   - Check Supabase URL and anon key
-   - Verify RLS policies are set up correctly
-
-2. **AI generation failing**
-   - Verify AI API key and endpoint
-   - Check network connectivity
-   - Review API rate limits
-
-3. **Database errors**
-   - Ensure migration has been run
-   - Check RLS policies
-   - Verify user permissions
-
-### Debug Mode
-
-Enable debug logging by adding to your environment:
-```env
-VITE_DEBUG=true
-```
+### Error Handling
+- Comprehensive error boundaries
+- Graceful fallbacks for AI services
+- User-friendly error messages
+- Retry mechanisms for network issues
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
 For support and questions:
 - Create an issue in the repository
 - Check the documentation
-- Review the troubleshooting section
+- Review the troubleshooting guide
 
----
+## Roadmap
 
-Built with ❤️ using React, Supabase, and AI technology.
-
+- [ ] Mobile app development
+- [ ] Advanced AI styling recommendations
+- [ ] Social networking features
+- [ ] Marketplace integration
+- [ ] AR/VR virtual try-on capabilities
+- [ ] Integration with popular fashion brands

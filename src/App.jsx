@@ -12,16 +12,19 @@ import Profile from './pages/Profile'
 import Pricing from './pages/Pricing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Wardrobe from './pages/Wardrobe'
+import ProtectedRoute from './components/ProtectedRoute'
+import LoadingSpinner from './components/LoadingSpinner'
 import useAuthStore from './store/authStore'
 
 function App() {
   // Initialize authentication
   useAuth()
   
-  const { isLoading } = useAuthStore()
+  const { isInitialized, isLoading } = useAuth()
 
   // Show loading spinner while initializing auth
-  if (isLoading) {
+  if (!isInitialized || isLoading) {
     return (
       <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
         <LoadingSpinner size="xl" text="Initializing..." />
@@ -36,33 +39,31 @@ function App() {
         <main>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route 
-              path="/try-on" 
-              element={
-                <ProtectedRoute requireSubscription={true}>
-                  <VirtualTryOn />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/recommendations" 
-              element={
-                <ProtectedRoute>
-                  <Recommendations />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/pricing" element={<Pricing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/pricing" element={<Pricing />} />
+            
+            {/* Protected Routes */}
+            <Route path="/try-on" element={
+              <ProtectedRoute requireSubscription={true}>
+                <VirtualTryOn />
+              </ProtectedRoute>
+            } />
+            <Route path="/wardrobe" element={
+              <ProtectedRoute>
+                <Wardrobe />
+              </ProtectedRoute>
+            } />
+            <Route path="/recommendations" element={
+              <ProtectedRoute>
+                <Recommendations />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
           </Routes>
         </main>
         <Toaster 

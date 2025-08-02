@@ -2,19 +2,25 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { useAuth } from '../hooks/useAuth'
-import useAuthStore from '../store/authStore'
 
-const navigation = [
+const publicNavigation = [
+  { name: 'Home', href: '/' },
+  { name: 'Pricing', href: '/pricing' }
+]
+
+const authenticatedNavigation = [
   { name: 'Home', href: '/' },
   { name: 'Virtual Try-On', href: '/try-on' },
+  { name: 'Wardrobe', href: '/wardrobe' },
   { name: 'Recommendations', href: '/recommendations' },
   { name: 'Pricing', href: '/pricing' }
 ]
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { isAuthenticated, user, profile, logout } = useAuth()
-  const { signOut } = useAuthStore()
+  const { isAuthenticated, user, profile, signOut } = useAuth()
+  
+  const navigation = isAuthenticated ? authenticatedNavigation : publicNavigation
 
   const handleLogout = async () => {
     await signOut()

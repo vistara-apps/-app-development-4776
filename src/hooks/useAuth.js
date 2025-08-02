@@ -1,62 +1,44 @@
 import { useEffect } from 'react'
-import { supabase } from '../lib/supabase'
 import useAuthStore from '../store/authStore'
 
 export const useAuth = () => {
-  const { 
-    user, 
-    profile, 
-    isAuthenticated, 
-    isLoading, 
-    subscription,
-    bodyMeasurements,
-    initialize, 
-    setUser, 
-    login, 
-    register, 
-    logout, 
-    updateProfile, 
-    setBodyMeasurements, 
-    setSubscription 
-  } = useAuthStore()
+  const store = useAuthStore()
 
   useEffect(() => {
-    // Initialize auth state
-    initialize()
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email)
-        
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (session?.user) {
-            await setUser(session.user)
-          }
-        } else if (event === 'SIGNED_OUT') {
-          await setUser(null)
-        }
-      }
-    )
-
-    return () => {
-      subscription?.unsubscribe()
+    // Initialize auth state on mount
+    if (!store.isInitialized) {
+      store.initialize()
     }
-  }, [initialize, setUser])
+  }, [store.isInitialized])
 
   return {
-    user,
-    profile,
-    isAuthenticated,
-    isLoading,
-    subscription,
-    bodyMeasurements,
-    login,
-    register,
-    logout,
-    updateProfile,
-    setBodyMeasurements,
-    setSubscription
+    // Auth state
+    user: store.user,
+    profile: store.profile,
+    isAuthenticated: store.isAuthenticated,
+    subscription: store.subscription,
+    bodyMeasurements: store.bodyMeasurements,
+    isLoading: store.isLoading,
+    isInitialized: store.isInitialized,
+    
+    // New auth methods
+    signUp: store.signUp,
+    signIn: store.signIn,
+    signOut: store.signOut,
+    
+    // Legacy auth methods (for backward compatibility)
+    login: store.login,
+    register: store.register,
+    logout: store.logout,
+    
+    // Profile methods
+    updateProfile: store.updateProfile,
+    setBodyMeasurements: store.setBodyMeasurements,
+    setSubscription: store.setSubscription,
+    
+    // Subscription helpers
+    hasActiveSubscription: store.hasActiveSubscription,
+    getSubscriptionFeatures: store.getSubscriptionFeatures
   }
 }
 

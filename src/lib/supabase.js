@@ -4,7 +4,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env.local file.')
+  throw new Error('Missing Supabase environment variables. Please check your .env file.')
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -18,10 +18,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Database table names
 export const TABLES = {
   USERS: 'users',
-  PROFILES: 'profiles'
+  PROFILES: 'profiles',
+  SUBSCRIPTIONS: 'subscriptions',
+  WARDROBE_ITEMS: 'wardrobe_items',
+  TRY_ON_SESSIONS: 'try_on_sessions'
 }
 
-// Helper functions for common operations
+// Helper functions for common operations (legacy support)
 export const getCurrentUser = async () => {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error) throw error
@@ -43,7 +46,7 @@ export const signOut = async () => {
 export const getUserProfile = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('profiles')
+      .from(TABLES.PROFILES)
       .select('*')
       .eq('id', userId)
       .single()
@@ -62,7 +65,7 @@ export const getUserProfile = async (userId) => {
 // Helper function to update user profile
 export const updateUserProfile = async (userId, updates) => {
   const { data, error } = await supabase
-    .from('profiles')
+    .from(TABLES.PROFILES)
     .update(updates)
     .eq('id', userId)
     .select()
@@ -79,7 +82,7 @@ export const updateUserProfile = async (userId, updates) => {
 export const getSubscriptionStatus = async (userId) => {
   try {
     const { data, error } = await supabase
-      .from('subscriptions')
+      .from(TABLES.SUBSCRIPTIONS)
       .select('*')
       .eq('user_id', userId)
       .eq('status', 'active')
@@ -96,8 +99,8 @@ export const getSubscriptionStatus = async (userId) => {
   }
 }
 
-// Auth helper functions (for backward compatibility)
-export const auth = {
+// Auth helper functions
+export const authHelpers = {
   // Sign up with email and password
   signUp: async (email, password, userData = {}) => {
     const { data, error } = await supabase.auth.signUp({
@@ -137,11 +140,6 @@ export const auth = {
     return { user, error }
   },
 
-  // Listen to auth changes
-  onAuthStateChange: (callback) => {
-    return supabase.auth.onAuthStateChange(callback)
-  },
-
   // Reset password
   resetPassword: async (email) => {
     const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -150,3 +148,6 @@ export const auth = {
     return { data, error }
   }
 }
+
+// Auth helper functions (for backward compatibility)
+export const auth = authHelpers

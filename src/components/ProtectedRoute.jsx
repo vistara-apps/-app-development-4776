@@ -1,17 +1,16 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import LoadingSpinner from './LoadingSpinner'
-import useAuthStore from '../store/authStore'
 
 export default function ProtectedRoute({ children, requireSubscription = false }) {
-  const { isAuthenticated, isLoading, subscription } = useAuth()
+  const { isAuthenticated, isLoading, isInitialized, subscription, hasActiveSubscription } = useAuth()
   const location = useLocation()
 
-  // Show loading while checking authentication
-  if (isLoading) {
+  // Show loading while auth is being initialized
+  if (!isInitialized || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner />
+      <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
+        <LoadingSpinner size="large" />
       </div>
     )
   }
@@ -22,7 +21,7 @@ export default function ProtectedRoute({ children, requireSubscription = false }
   }
 
   // Check subscription requirement
-  if (requireSubscription && (!subscription || !subscription.active)) {
+  if (requireSubscription && !hasActiveSubscription()) {
     return <Navigate to="/pricing" state={{ from: location }} replace />
   }
 
