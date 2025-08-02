@@ -1,18 +1,26 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import useAuthStore from '../store/authStore'
+import { useAuth } from '../hooks/useAuth'
 
-const navigation = [
+const publicNavigation = [
+  { name: 'Home', href: '/' },
+  { name: 'Pricing', href: '/pricing' }
+]
+
+const authenticatedNavigation = [
   { name: 'Home', href: '/' },
   { name: 'Virtual Try-On', href: '/try-on' },
+  { name: 'Wardrobe', href: '/wardrobe' },
   { name: 'Recommendations', href: '/recommendations' },
   { name: 'Pricing', href: '/pricing' }
 ]
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { isAuthenticated, user, logout } = useAuthStore()
+  const { isAuthenticated, user, signOut } = useAuth()
+  
+  const navigation = isAuthenticated ? authenticatedNavigation : publicNavigation
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm shadow-soft border-b border-neutral-200/50">
@@ -49,7 +57,7 @@ export default function Navbar() {
                   <span>{user?.name}</span>
                 </Link>
                 <button
-                  onClick={logout}
+                  onClick={signOut}
                   className="btn-secondary btn-sm"
                 >
                   Logout
@@ -111,7 +119,7 @@ export default function Navbar() {
                     </Link>
                     <button
                       onClick={() => {
-                        logout()
+                        signOut()
                         setMobileMenuOpen(false)
                       }}
                       className="w-full text-left px-4 py-3 text-neutral-700 hover:text-error-600 hover:bg-error-50 rounded-xl text-sm font-medium transition-all duration-200"

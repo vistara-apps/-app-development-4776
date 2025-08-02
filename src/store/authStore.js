@@ -1,31 +1,260 @@
 import { create } from 'zustand'
+import { supabase, authHelpers } from '../lib/supabase'
+import { userService } from '../services/userService'
+import { subscriptionService } from '../services/subscriptionService'
+import { toast } from 'react-hot-toast'
 
-const useAuthStore = create((set) => ({
+const useAuthStore = create((set, get) => ({
   user: null,
+  profile: null,
   isAuthenticated: false,
   subscription: null,
   bodyMeasurements: null,
+  isLoading: false,
+  isInitialized: false,
   
-  login: (user) => set({ 
-    user, 
-    isAuthenticated: true,
-    subscription: user.subscription || null 
-  }),
+  // Initialize auth state from Supabase session
+  initialize: async () => {
+    try {
+      set({ isLoading: true })
+      
+      const { session, error } = await authHelpers.getSession()
+      
+      if (error) {
+        console.error('Error getting session:', error)
+        set({ isInitialized: true, isLoading: false })
+        return
+      }
+
+      if (session?.user) {
+        await get().setUser(session.user)
+      }
+      
+      set({ isInitialized: true, isLoading: false })
+    } catch (error) {
+      console.error('Error initializing auth:', error)
+      set({ isInitialized: true, isLoading: false })
+    }
+  },
+
+  // Set user and load associated data
+  setUser: async (user) => {
+    try {
+      set({ user, isAuthenticated: !!user, isLoading: true })
+      
+      if (user) {
+        // Load user profile
+        const { data: profile } = await userService.getProfile(user.id)
+        
+        // Load subscription
+        const { data: subscription } = await subscriptionService.getSubscription(user.id)
+        
+        set({ 
+          profile,
+          subscription,
+          bodyMeasurements: profile?.body_measurements || null,
+          isLoading: false
+        })
+      } else {
+        set({ 
+          profile: null,
+          subscription: null,
+          bodyMeasurements: null,
+          isLoading: false
+        })
+      }
+    } catch (error) {
+      console.error('Error setting user:', error)
+      set({ isLoading: false })
+    }
+  },
   
-  logout: () => set({ 
-    user: null, 
-    isAuthenticated: false, 
-    subscription: null,
-    bodyMeasurements: null 
-  }),
+  // Sign up with email and password
+  signUp: async (email, password, userData = {}) => {
+    try {
+      set({ isLoading: true })
+      
+      const { data, error } = await authHelpers.signUp(email, password, userData)
+      
+      if (error) {
+        toast.error(error.message)
+        set({ isLoading: false })
+        return { success: false, error }
+      }
+
+      if (data.user) {
+        // Create user profile
+        await userService.createProfile(data.user.id, {
+          email: data.user.email,
+          full_name: userData.full_name || '',
+          avatar_url: userData.avatar_url || null
+        })
+        
+        toast.success('Account created successfully! Please check your email to verify your account.')
+      }
+      
+      set({ isLoading: false })
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error signing up:', error)
+      toast.error('Failed to create account')
+      set({ isLoading: false })
+      return { success: false, error }
+    }
+  },
+
+  // Sign in with email and password
+  signIn: async (email, password) => {
+    try {
+      set({ isLoading: true })
+      
+      const { data, error } = await authHelpers.signIn(email, password)
+      
+      if (error) {
+        toast.error(error.message)
+        set({ isLoading: false })
+        return { success: false, error }
+      }
+
+      if (data.user) {
+        await get().setUser(data.user)
+        toast.success('Welcome back!')
+      }
+      
+      set({ isLoading: false })
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error signing in:', error)
+      toast.error('Failed to sign in')
+      set({ isLoading: false })
+      return { success: false, error }
+    }
+  },
+
+  // Sign out
+  signOut: async () => {
+    try {
+      set({ isLoading: true })
+      
+      const { error } = await authHelpers.signOut()
+      
+      if (error) {
+        toast.error(error.message)
+        set({ isLoading: false })
+        return { success: false, error }
+      }
+
+      set({ 
+        user: null, 
+        profile: null,
+        isAuthenticated: false, 
+        subscription: null,
+        bodyMeasurements: null,
+        isLoading: false
+      })
+      
+      toast.success('Signed out successfully')
+      return { success: true }
+    } catch (error) {
+      console.error('Error signing out:', error)
+      toast.error('Failed to sign out')
+      set({ isLoading: false })
+      return { success: false, error }
+    }
+  },
   
-  updateProfile: (updates) => set((state) => ({
-    user: { ...state.user, ...updates }
-  })),
+  // Update user profile
+  updateProfile: async (updates) => {
+    try {
+      const { user } = get()
+      if (!user) return { success: false, error: 'Not authenticated' }
+
+      set({ isLoading: true })
+      
+      const { data, error } = await userService.updateProfile(user.id, updates)
+      
+      if (error) {
+        toast.error('Failed to update profile')
+        set({ isLoading: false })
+        return { success: false, error }
+      }
+
+      set({ 
+        profile: data,
+        bodyMeasurements: data.body_measurements || null,
+        isLoading: false
+      })
+      
+      toast.success('Profile updated successfully')
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      toast.error('Failed to update profile')
+      set({ isLoading: false })
+      return { success: false, error }
+    }
+  },
   
-  setBodyMeasurements: (measurements) => set({ bodyMeasurements: measurements }),
+  // Set body measurements
+  setBodyMeasurements: async (measurements) => {
+    try {
+      const { user } = get()
+      if (!user) return { success: false, error: 'Not authenticated' }
+
+      const { data, error } = await userService.setBodyMeasurements(user.id, measurements)
+      
+      if (error) {
+        toast.error('Failed to save measurements')
+        return { success: false, error }
+      }
+
+      set({ 
+        bodyMeasurements: measurements,
+        profile: data
+      })
+      
+      toast.success('Measurements saved successfully')
+      return { success: true, data }
+    } catch (error) {
+      console.error('Error setting measurements:', error)
+      toast.error('Failed to save measurements')
+      return { success: false, error }
+    }
+  },
   
-  setSubscription: (subscription) => set({ subscription })
+  // Update subscription
+  setSubscription: (subscription) => set({ subscription }),
+
+  // Check if user has active subscription
+  hasActiveSubscription: () => {
+    const { subscription } = get()
+    if (!subscription) return false
+    
+    const now = new Date()
+    const expiresAt = new Date(subscription.expires_at)
+    
+    return subscription.active && expiresAt > now
+  },
+
+  // Get subscription features
+  getSubscriptionFeatures: () => {
+    const { subscription } = get()
+    const plan = subscription?.plan || 'free'
+    return subscriptionService.getSubscriptionFeatures(plan)
+  }
 }))
+
+// Set up auth state listener
+supabase.auth.onAuthStateChange(async (event, session) => {
+  const store = useAuthStore.getState()
+  
+  if (event === 'SIGNED_IN' && session?.user) {
+    await store.setUser(session.user)
+  } else if (event === 'SIGNED_OUT') {
+    store.setUser(null)
+  } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+    await store.setUser(session.user)
+  }
+})
 
 export default useAuthStore
