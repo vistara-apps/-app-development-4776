@@ -9,24 +9,29 @@ import {
 
 const features = [
   {
+    name: 'AR Try-On',
+    description: 'Experience immersive augmented reality try-on with real-time pose tracking and 3D visualization.',
+    icon: CubeIcon,
+    href: '/ar-try-on',
+    badge: 'NEW'
+  },
+  {
     name: 'Virtual Try-On',
     description: 'Upload a selfie and see how clothes look on your body in real-time with our advanced 3D modeling.',
     icon: CameraIcon,
+    href: '/try-on'
   },
   {
     name: 'Personalized Recommendations',
     description: 'Get tailored product suggestions based on your body shape, size, and style preferences.',
     icon: SparklesIcon,
-  },
-  {
-    name: 'Plug-and-Play Integration',
-    description: 'Easy integration for retailers with our simple JavaScript snippet or API.',
-    icon: CubeIcon,
+    href: '/recommendations'
   },
   {
     name: 'Return Rate Optimization',
     description: 'Data-driven insights to help minimize returns and increase customer satisfaction.',
     icon: ChartBarIcon,
+    href: '/pricing'
   },
 ]
 
@@ -71,8 +76,8 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.5 }}
               className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6"
             >
-              <Link to="/try-on" className="btn-primary btn-xl group">
-                <span>Try Virtual Fitting</span>
+              <Link to="/ar-try-on" className="btn-primary btn-xl group">
+                <span>🕶️ Try AR Experience</span>
                 <svg className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                 </svg>
@@ -147,8 +152,12 @@ export default function Home() {
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="card-hover p-8 group"
+                  className="card-hover p-8 group relative"
                 >
+                  {feature.href ? (
+                    <Link to={feature.href} className="absolute inset-0 z-10" />
+                  ) : null}
+                  
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-r from-primary-500 to-primary-600 shadow-soft group-hover:shadow-colored transition-all duration-200">
@@ -156,12 +165,27 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-neutral-900 mb-3">
-                        {feature.name}
-                      </h3>
+                      <div className="flex items-center gap-3 mb-3">
+                        <h3 className="text-xl font-semibold text-neutral-900">
+                          {feature.name}
+                        </h3>
+                        {feature.badge && (
+                          <span className="badge-primary text-xs font-medium">
+                            {feature.badge}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-neutral-600 leading-7">
                         {feature.description}
                       </p>
+                      {feature.href && (
+                        <div className="mt-4 flex items-center text-primary-600 text-sm font-medium group-hover:text-primary-700 transition-colors">
+                          <span>Try it now</span>
+                          <svg className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>

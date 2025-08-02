@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import VirtualTryOn from './pages/VirtualTryOn'
+import ARTryOn from './pages/ARTryOn'
 import Recommendations from './pages/Recommendations'
 import Profile from './pages/Profile'
 import Pricing from './pages/Pricing'
@@ -17,6 +18,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/try-on" element={<VirtualTryOn />} />
+          <Route path="/ar-try-on" element={<ARTryOn />} />
           <Route path="/recommendations" element={<Recommendations />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/pricing" element={<Pricing />} />
