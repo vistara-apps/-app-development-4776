@@ -7,6 +7,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
 import VirtualTryOn from './pages/VirtualTryOn'
+import ARTryOn from './pages/ARTryOn'
 import Recommendations from './pages/Recommendations'
 import Profile from './pages/Profile'
 import Pricing from './pages/Pricing'
@@ -45,6 +46,11 @@ function App() {
             <Route path="/try-on" element={
               <ProtectedRoute requireSubscription={true}>
                 <VirtualTryOn />
+              </ProtectedRoute>
+            } />
+            <Route path="/ar-try-on" element={
+              <ProtectedRoute requireSubscription={true}>
+                <ARTryOn />
               </ProtectedRoute>
             } />
             <Route path="/wardrobe" element={

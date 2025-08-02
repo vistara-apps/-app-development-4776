@@ -11,6 +11,7 @@ const publicNavigation = [
 const authenticatedNavigation = [
   { name: 'Home', href: '/' },
   { name: 'Virtual Try-On', href: '/try-on' },
+  { name: 'AR Try-On', href: '/ar-try-on' },
   { name: 'Wardrobe', href: '/wardrobe' },
   { name: 'Recommendations', href: '/recommendations' },
   { name: 'Pricing', href: '/pricing' }
